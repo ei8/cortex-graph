@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <AssemblyName>works.ei8.Brain.Graph.Port.Adapter.IO.Process.Events</AssemblyName>
+    <RootNamespace>works.ei8.Brain.Graph.Port.Adapter.IO.Process.Events</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="GetEventStore\**" />
+    <Compile Remove="Standard\**" />
+    <EmbeddedResource Remove="GetEventStore\**" />
+    <EmbeddedResource Remove="Standard\**" />
+    <None Remove="GetEventStore\**" />
+    <None Remove="Standard\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Neurul.Common" Version="0.1.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\Domain.Model\Domain.Model.csproj" />
+  </ItemGroup>
+
+</Project>

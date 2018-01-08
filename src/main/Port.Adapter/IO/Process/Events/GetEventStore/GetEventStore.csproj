@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <AssemblyName>works.ei8.Brain.Graph.Port.Adapter.IO.Process.Events.GetEventStore</AssemblyName>
+    <RootNamespace>works.ei8.Brain.Graph.Port.Adapter.IO.Process.Events.GetEventStore</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="EventStore.ClientAPI.NetCore" Version="4.0.0-alpha-1" />
+    <PackageReference Include="NLog" Version="4.5.0-rc02" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\..\Domain.Model\Domain.Model.csproj" />
+    <ProjectReference Include="..\Events.csproj" />
+  </ItemGroup>
+
+</Project>

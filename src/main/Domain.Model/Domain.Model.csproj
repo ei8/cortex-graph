@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <AssemblyName>works.ei8.Brain.Graph.Domain.Model</AssemblyName>
+    <RootNamespace>works.ei8.Brain.Graph.Domain.Model</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Http\**" />
+    <Compile Remove="Infrastructure\**" />
+    <EmbeddedResource Remove="Http\**" />
+    <EmbeddedResource Remove="Infrastructure\**" />
+    <None Remove="Http\**" />
+    <None Remove="Infrastructure\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ArangoDB.Client" Version="0.7.60" />
+    <PackageReference Include="CqrsLite" Version="0.18.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Update="NETStandard.Library" Version="2.0.1" />
+  </ItemGroup>
+
+</Project>
