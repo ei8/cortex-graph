@@ -2,8 +2,8 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <AssemblyName>works.ei8.Brain.Graph.Port.Adapter.IO.Process.Events</AssemblyName>
-    <RootNamespace>works.ei8.Brain.Graph.Port.Adapter.IO.Process.Events</RootNamespace>
+    <AssemblyName>works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events</AssemblyName>
+    <RootNamespace>works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
@@ -16,7 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Neurul.Common" Version="0.1.0" />
+    <PackageReference Include="Neurul.Common" Version="0.1.2" />
   </ItemGroup>
 
   <ItemGroup>

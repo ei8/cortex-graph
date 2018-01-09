@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace works.ei8.Brain.Graph.Domain.Model
+namespace works.ei8.Cortex.Graph.Domain.Model
 {
     public class Settings
     {

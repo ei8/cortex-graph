@@ -2,12 +2,12 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <AssemblyName>works.ei8.Brain.Graph.Port.Adapter.IO.Process.Events.Standard</AssemblyName>
-    <RootNamespace>works.ei8.Brain.Graph.Port.Adapter.IO.Process.Events.Standard</RootNamespace>
+    <AssemblyName>works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Standard</AssemblyName>
+    <RootNamespace>works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Standard</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Neurul.Common" Version="0.1.0" />
+    <PackageReference Include="Neurul.Common" Version="0.1.2" />
     <PackageReference Include="NLog" Version="4.5.0-rc02" />
     <PackageReference Include="Polly" Version="5.6.1" />
   </ItemGroup>

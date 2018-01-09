@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore;
 using NLog.Web;
 
-namespace works.ei8.Brain.Graph.Port.Adapter.In.Http
+namespace works.ei8.Cortex.Graph.Port.Adapter.In.Http
 {
     public class Program
     {

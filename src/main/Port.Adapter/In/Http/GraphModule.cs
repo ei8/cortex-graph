@@ -1,12 +1,12 @@
 ﻿using CQRSlite.Commands;
 using Nancy;
-using works.ei8.Brain.Graph.Application.Commands;
+using works.ei8.Cortex.Graph.Application.Commands;
 
-namespace works.ei8.Brain.Graph.Port.Adapter.In.Http
+namespace works.ei8.Cortex.Graph.Port.Adapter.In.Http
 {
     public class GraphModule : NancyModule
     {
-        public GraphModule(ICommandSender commandSender) : base("/brain/graph")
+        public GraphModule(ICommandSender commandSender) : base("/cortex/graph")
         {
            this.Post("/regenerate", (parameters) =>
            {

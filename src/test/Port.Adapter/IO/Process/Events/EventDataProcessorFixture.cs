@@ -6,10 +6,10 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using works.ei8.Brain.Graph.Domain.Model;
+using works.ei8.Cortex.Graph.Domain.Model;
 using Xunit;
 
-namespace works.ei8.Brain.Graph.Port.Adapter.IO.Process.Events.Test.EventDataProcessorFixture.given
+namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Test.EventDataProcessorFixture.given
 {
     public abstract class Context : TestContext<EventDataProcessor>
     {

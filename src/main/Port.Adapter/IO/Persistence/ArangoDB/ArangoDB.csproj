@@ -2,8 +2,8 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <RootNamespace>works.ei8.Brain.Graph.Port.Adapter.IO.Persistence.ArangoDB</RootNamespace>
-    <AssemblyName>works.ei8.Brain.Graph.Port.Adapter.IO.Persistence.ArangoDB</AssemblyName>
+    <RootNamespace>works.ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB</RootNamespace>
+    <AssemblyName>works.ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>

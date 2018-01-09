@@ -9,8 +9,8 @@
     <ProjectGuid>{DD3D7403-8E3D-427E-BF46-7E3A81A59755}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>works.ei8.Brain.Graph.Port.Adapter.IO.Process.Events.GetEventStore.Test</RootNamespace>
-    <AssemblyName>works.ei8.Brain.Graph.Port.Adapter.IO.Process.Events.GetEventStore.Test</AssemblyName>
+    <RootNamespace>works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.GetEventStore.Test</RootNamespace>
+    <AssemblyName>works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.GetEventStore.Test</AssemblyName>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <ProjectTypeGuids>{3AC096D0-A1C2-E12C-1390-A8335801FDAB};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>

@@ -3,9 +3,9 @@ using org.neurul.Common;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using works.ei8.Brain.Graph.Domain.Model;
+using works.ei8.Cortex.Graph.Domain.Model;
 
-namespace works.ei8.Brain.Graph.Port.Adapter.IO.Process.Events
+namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events
 {
     public class EventDataProcessor
     {

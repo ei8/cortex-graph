@@ -6,13 +6,13 @@ using Nancy;
 using Nancy.TinyIoc;
 using org.neurul.Common.Http;
 using System;
-using works.ei8.Brain.Graph.Application;
-using works.ei8.Brain.Graph.Domain.Model;
-using works.ei8.Brain.Graph.Port.Adapter.IO.Persistence.ArangoDB;
-using works.ei8.Brain.Graph.Port.Adapter.IO.Process.Events.GetEventStore;
-using works.ei8.Brain.Graph.Port.Adapter.IO.Process.Events.Standard;
+using works.ei8.Cortex.Graph.Application;
+using works.ei8.Cortex.Graph.Domain.Model;
+using works.ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB;
+using works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.GetEventStore;
+using works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Standard;
 
-namespace works.ei8.Brain.Graph.Port.Adapter.In.Http
+namespace works.ei8.Cortex.Graph.Port.Adapter.In.Http
 {
     public class CustomBootstrapper : DefaultNancyBootstrapper
     {

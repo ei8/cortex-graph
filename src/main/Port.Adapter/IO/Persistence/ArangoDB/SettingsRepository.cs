@@ -3,9 +3,9 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using works.ei8.Brain.Graph.Domain.Model;
+using works.ei8.Cortex.Graph.Domain.Model;
 
-namespace works.ei8.Brain.Graph.Port.Adapter.IO.Persistence.ArangoDB
+namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
 {
     public class SettingsRepository : IRepository<Settings>
     {

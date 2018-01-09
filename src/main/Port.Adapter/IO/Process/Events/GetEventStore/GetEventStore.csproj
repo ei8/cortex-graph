@@ -2,8 +2,8 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <AssemblyName>works.ei8.Brain.Graph.Port.Adapter.IO.Process.Events.GetEventStore</AssemblyName>
-    <RootNamespace>works.ei8.Brain.Graph.Port.Adapter.IO.Process.Events.GetEventStore</RootNamespace>
+    <AssemblyName>works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.GetEventStore</AssemblyName>
+    <RootNamespace>works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.GetEventStore</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>

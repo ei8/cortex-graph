@@ -8,14 +8,14 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using works.ei8.Brain.Graph.Domain.Model;
+using works.ei8.Cortex.Graph.Domain.Model;
 
-namespace works.ei8.Brain.Graph.Port.Adapter.IO.Process.Events.GetEventStore
+namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.GetEventStore
 {
     public class EventStoreEventLogClient : IEventLogClient
     {
         private const string StreamIdPrefix = "Neuron";
-        private const string DomainModelNamespace = "org.neurul.Brain.Domain.Model";
+        private const string DomainModelNamespace = "org.neurul.Cortex.Domain.Model";
 
         private static SemaphoreSlim SemaphoreSlim = new SemaphoreSlim(1, 1);
 

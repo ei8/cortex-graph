@@ -2,8 +2,8 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <AssemblyName>works.ei8.Brain.Graph.Domain.Model</AssemblyName>
-    <RootNamespace>works.ei8.Brain.Graph.Domain.Model</RootNamespace>
+    <AssemblyName>works.ei8.Cortex.Graph.Domain.Model</AssemblyName>
+    <RootNamespace>works.ei8.Cortex.Graph.Domain.Model</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>

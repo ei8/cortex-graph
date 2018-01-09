@@ -10,9 +10,9 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
-using works.ei8.Brain.Graph.Domain.Model;
+using works.ei8.Cortex.Graph.Domain.Model;
 
-namespace works.ei8.Brain.Graph.Port.Adapter.IO.Process.Events.Standard
+namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Standard
 {
     public class StandardEventLogClient : IEventLogClient
     {
@@ -24,7 +24,7 @@ namespace works.ei8.Brain.Graph.Port.Adapter.IO.Process.Events.Standard
                 (ex, _) => StandardEventLogClient.logger.Error(ex, "Error occured while subscribing to events. " + ex.InnerException?.Message)
             );
         
-        private static string getEventsPathTemplate = "/brain/events/{0}";
+        private static string getEventsPathTemplate = "/cortex/events/{0}";
         private const long StartPosition = 0;
 
         private static readonly Logger logger = LogManager.GetCurrentClassLogger();
