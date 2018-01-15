@@ -14,11 +14,6 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
         private const string GraphName = "Graph";
         private const string EdgePrefix = nameof(NeuronVertex) + "/";
 
-        public NeuronRepository()
-        {
-            NeuronRepository.UpdateDBAccessSettings();
-        }
-
         public async Task Clear()
         {
             using (var db = ArangoDatabase.CreateWithSetting())
@@ -149,16 +144,6 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
                     }
                     );
             }
-        }
-
-        private static void UpdateDBAccessSettings()
-        {
-            ArangoDatabase.ChangeSetting(s =>
-            {
-                s.Database = "example";
-                s.Url = "http://localhost:8529";
-                s.Credential = new System.Net.NetworkCredential("root", string.Empty);
-            });
         }
     }
 }

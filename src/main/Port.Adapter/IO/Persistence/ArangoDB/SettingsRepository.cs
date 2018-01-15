@@ -11,11 +11,6 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
     {
         private const string CollectionName = "Settings";
 
-        public SettingsRepository()
-        {
-            SettingsRepository.UpdateDBAccessSettings();
-        }
-
         public Task<Settings> Get(Guid dtoGuid, CancellationToken cancellationToken = default(CancellationToken))
         {
             if (dtoGuid != Guid.Empty)
@@ -51,16 +46,6 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
             }
 
             return Task.CompletedTask;
-        }
-
-        private static void UpdateDBAccessSettings()
-        {
-            ArangoDatabase.ChangeSetting(s =>
-            {
-                s.Database = "example";
-                s.Url = "http://localhost:8529";
-                s.Credential = new System.Net.NetworkCredential("root", string.Empty);
-            });
         }
 
         public Task Clear()

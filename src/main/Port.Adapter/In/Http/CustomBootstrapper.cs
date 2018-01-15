@@ -1,8 +1,10 @@
-﻿using CQRSlite.Caching;
+﻿using ArangoDB.Client;
+using CQRSlite.Caching;
 using CQRSlite.Commands;
 using CQRSlite.Routing;
 using EventStore.ClientAPI;
 using Nancy;
+using Nancy.Bootstrapper;
 using Nancy.TinyIoc;
 using org.neurul.Common.Http;
 using System;
@@ -16,6 +18,12 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.In.Http
 {
     public class CustomBootstrapper : DefaultNancyBootstrapper
     {
+        private Settings settings;
+
+        public CustomBootstrapper(Settings settings)
+        {
+            this.settings = settings;
+        }
         protected override void ConfigureRequestContainer(TinyIoCContainer container, NancyContext context)
         {
             base.ConfigureRequestContainer(container, context);
@@ -25,12 +33,12 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.In.Http
             ((TinyIoCServiceLocator)container.Resolve<IServiceProvider>()).SetRequestContainer(container);
 
             container.Register<IRepository<NeuronVertex>, NeuronRepository>();
-            container.Register<IRepository<Settings>, SettingsRepository>();
+            container.Register<IRepository<Domain.Model.Settings>, SettingsRepository>();
             container.Register<IEventLogClient, StandardEventLogClient>(
                 new StandardEventLogClient(
-                    @"http://localhost:59199",
-                    2000,
-                    container.Resolve<IRepository<Settings>>(),
+                    this.settings.EventInfoLogBaseUrl,
+                    this.settings.PollInterval,
+                    container.Resolve<IRepository<Domain.Model.Settings>>(),
                     container.Resolve<IRepository<NeuronVertex>>()
                     )
                 );
@@ -49,6 +57,18 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.In.Http
             container.Register<IServiceProvider, TinyIoCServiceLocator>(ticl);
             var registrar = new RouteRegistrar(ticl);
             registrar.Register(typeof(GraphCommandHandlers));
+        }
+
+        protected override void ApplicationStartup(TinyIoCContainer container, IPipelines pipelines)
+        {
+            base.ApplicationStartup(container, pipelines);
+
+            ArangoDatabase.ChangeSetting(s =>
+            {
+                s.Database = this.settings.DbSettings.Name;
+                s.Url = this.settings.DbSettings.Url;
+                s.Credential = new System.Net.NetworkCredential(this.settings.DbSettings.Username, this.settings.DbSettings.Password);
+            });
         }
     }
 }
