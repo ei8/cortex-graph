@@ -30,7 +30,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\Common\Common.csproj" />
     <ProjectReference Include="..\..\In\Http\Http.csproj" />
+    <ProjectReference Include="..\..\Out\Http\Http.csproj" />
   </ItemGroup>
 
 </Project>

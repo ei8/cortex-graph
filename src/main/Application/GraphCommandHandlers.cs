@@ -12,10 +12,10 @@ namespace works.ei8.Cortex.Graph.Application
         ICancellableCommandHandler<ResumeGeneration>
     {
         private IEventLogClient eventLog;
-        private IRepository<NeuronVertex> neuronRepository;
+        private IRepository<Neuron> neuronRepository;
         private IRepository<Settings> settingsRepository;
 
-        public GraphCommandHandlers(IEventLogClient eventLog, IRepository<NeuronVertex> neuronRepository, 
+        public GraphCommandHandlers(IEventLogClient eventLog, IRepository<Neuron> neuronRepository, 
             IRepository<Settings> settingsRepository)
         {
             this.eventLog = eventLog;

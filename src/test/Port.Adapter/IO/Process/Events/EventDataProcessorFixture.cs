@@ -13,14 +13,14 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Test.EventDataPr
 {
     public abstract class Context : TestContext<EventDataProcessor>
     {
-        protected Mock<IRepository<NeuronVertex>> repository;
+        protected Mock<IRepository<Neuron>> repository;
         protected Guid guid;
 
         protected override void Given()
         {
             base.Given();
 
-            this.repository = new Mock<IRepository<NeuronVertex>>();
+            this.repository = new Mock<IRepository<Neuron>>();
             this.sut = new EventDataProcessor();
             this.guid = Guid.NewGuid();
         }
@@ -46,7 +46,7 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Test.EventDataPr
                 this.repository
                     .Setup(e => e.Get(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
                     .Callback<Guid, CancellationToken>((g, c) => this.gettingGuid = g)
-                    .Returns<Guid, CancellationToken>((g, c) => Task.FromResult(this.GetNeuronVertex(g)));
+                    .Returns<Guid, CancellationToken>((g, c) => Task.FromResult(this.GetNeuron(g)));
             }
 
             protected override void When()
@@ -54,7 +54,7 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Test.EventDataPr
                 Task.Run(() => this.sut.Process(this.repository.Object, this.EventName, this.Data)).Wait();
             }
 
-            protected abstract NeuronVertex GetNeuronVertex(Guid id);
+            protected abstract Neuron GetNeuron(Guid id);
 
             protected abstract string EventName { get; }
 
@@ -63,16 +63,16 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Test.EventDataPr
 
         public abstract class SavingContext : ProcessContext
         {
-            protected NeuronVertex savingNeuron;
+            protected Neuron savingNeuron;
 
             protected override void Given()
             {
                 base.Given();
 
                 this.repository
-                    .Setup(e => e.Save(It.IsAny<NeuronVertex>(), It.IsAny<CancellationToken>()))
-                    .Callback<NeuronVertex, CancellationToken>((n, c) => this.savingNeuron = n)
-                    .Returns<NeuronVertex, CancellationToken>((n, c) => Task.CompletedTask);
+                    .Setup(e => e.Save(It.IsAny<Neuron>(), It.IsAny<CancellationToken>()))
+                    .Callback<Neuron, CancellationToken>((n, c) => this.savingNeuron = n)
+                    .Returns<Neuron, CancellationToken>((n, c) => Task.CompletedTask);
             }
         }
 
@@ -80,7 +80,7 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Test.EventDataPr
         {
             public class NeuronCreatedContext : SavingContext
             {
-                protected override NeuronVertex GetNeuronVertex(Guid id) => null;
+                protected override Neuron GetNeuron(Guid id) => null;
 
                 protected override string EventName => "NeuronCreated";
 
@@ -119,9 +119,9 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Test.EventDataPr
         {
             public class DataChangedContext : SavingContext
             {
-                protected override NeuronVertex GetNeuronVertex(Guid id)
+                protected override Neuron GetNeuron(Guid id)
                 {
-                    return new NeuronVertex() { Id = id.ToString(), Data = this.initialData };
+                    return new Neuron() { Id = id.ToString(), Data = this.initialData };
                 }
 
                 protected const string NewData = "A whole new world";
@@ -172,9 +172,9 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Test.EventDataPr
                 protected string terminal1Id = Guid.NewGuid().ToString();
                 protected string terminal2Id = Guid.NewGuid().ToString();
 
-                protected override NeuronVertex GetNeuronVertex(Guid id)
+                protected override Neuron GetNeuron(Guid id)
                 {
-                    return new NeuronVertex()
+                    return new Neuron()
                     {
                         Id = id.ToString(),
                         Data = this.initialData
@@ -186,10 +186,10 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Test.EventDataPr
                 protected override string Data => @"{
   ""Terminals"": [
     {
-      ""Target"": """ + this.terminal1Id + @"""
+      ""TargetId"": """ + this.terminal1Id + @"""
     },
     {
-      ""Target"": """ + this.terminal2Id + @"""
+      ""TargetId"": """ + this.terminal2Id + @"""
     }
   ],
   ""Id"": """ + this.guid.ToString() + @""",
@@ -221,13 +221,13 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Test.EventDataPr
                 [Fact]
                 public void Should_save_correct_terminal1()
                 {
-                    Assert.Equal(this.terminal1Id, this.savingNeuron.Terminals.ToArray()[0].Target);
+                    Assert.Equal(this.terminal1Id, this.savingNeuron.Terminals.ToArray()[0].TargetId);
                 }
 
                 [Fact]
                 public void Should_save_correct_terminal2()
                 {
-                    Assert.Equal(this.terminal2Id, this.savingNeuron.Terminals.ToArray()[1].Target);
+                    Assert.Equal(this.terminal2Id, this.savingNeuron.Terminals.ToArray()[1].TargetId);
                 }
 
                 [Fact]
@@ -251,16 +251,16 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Test.EventDataPr
                 protected string terminal1Id = Guid.NewGuid().ToString();
                 protected string terminal2Id = Guid.NewGuid().ToString();
 
-                protected override NeuronVertex GetNeuronVertex(Guid id)
+                protected override Neuron GetNeuron(Guid id)
                 {
-                    return new NeuronVertex()
+                    return new Neuron()
                     {
                         Id = id.ToString(),
                         Data = this.initialData,
-                        Terminals = new TerminalEdge[]
+                        Terminals = new Terminal[]
                         {
-                            new TerminalEdge(Guid.NewGuid().ToString(), id.ToString(), this.terminal1Id),
-                            new TerminalEdge(Guid.NewGuid().ToString(), id.ToString(), this.terminal2Id),
+                            new Terminal(Guid.NewGuid().ToString(), id.ToString(), this.terminal1Id),
+                            new Terminal(Guid.NewGuid().ToString(), id.ToString(), this.terminal2Id),
                         }
                     };
                 }
@@ -270,7 +270,7 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Test.EventDataPr
                 protected override string Data => @"{
   ""Terminals"": [
     {
-      ""Target"": """ + this.terminal1Id + @"""
+      ""TargetId"": """ + this.terminal1Id + @"""
     }
   ],
   ""Id"": """ + this.guid.ToString() + @""",
@@ -302,7 +302,7 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Test.EventDataPr
                 [Fact]
                 public void Should_save_correct_terminal()
                 {
-                    Assert.Equal(this.terminal2Id, this.savingNeuron.Terminals.ToArray()[0].Target);
+                    Assert.Equal(this.terminal2Id, this.savingNeuron.Terminals.ToArray()[0].TargetId);
                 }
 
                 [Fact]
@@ -321,16 +321,16 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Test.EventDataPr
 
         public abstract class RemovalContext : ProcessContext
         {
-            protected NeuronVertex removingNeuron;
+            protected Neuron removingNeuron;
 
             protected override void Given()
             {
                 base.Given();
 
                 this.repository
-                    .Setup(e => e.Remove(It.IsAny<NeuronVertex>(), It.IsAny<CancellationToken>()))
-                    .Callback<NeuronVertex, CancellationToken>((n, c) => this.removingNeuron = n)
-                    .Returns<NeuronVertex, CancellationToken>((n, c) => Task.CompletedTask);
+                    .Setup(e => e.Remove(It.IsAny<Neuron>(), It.IsAny<CancellationToken>()))
+                    .Callback<Neuron, CancellationToken>((n, c) => this.removingNeuron = n)
+                    .Returns<Neuron, CancellationToken>((n, c) => Task.CompletedTask);
             }
         }
 
@@ -340,15 +340,15 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Test.EventDataPr
             {
                 protected string terminalId = Guid.NewGuid().ToString();
 
-                protected override NeuronVertex GetNeuronVertex(Guid id)
+                protected override Neuron GetNeuron(Guid id)
                 {
-                    return new NeuronVertex()
+                    return new Neuron()
                     {
                         Id = id.ToString(),
                         Data = this.initialData,
-                        Terminals = new TerminalEdge[]
+                        Terminals = new Terminal[]
                         {
-                                new TerminalEdge(Guid.NewGuid().ToString(), id.ToString(), this.terminalId),
+                                new Terminal(Guid.NewGuid().ToString(), id.ToString(), this.terminalId),
                         }
                     };
                 }

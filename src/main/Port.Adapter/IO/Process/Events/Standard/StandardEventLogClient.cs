@@ -16,6 +16,8 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Standard
 {
     public class StandardEventLogClient : IEventLogClient
     {
+        private static HttpClient httpClient = null;
+
         private static Policy exponentialRetryPolicy = Policy
             .Handle<Exception>()
             .WaitAndRetryAsync(
@@ -28,16 +30,21 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Standard
         private const long StartPosition = 0;
 
         private static readonly Logger logger = LogManager.GetCurrentClassLogger();
-        private static SemaphoreSlim SemaphoreSlim = new SemaphoreSlim(1, 1);
-        private string eventInfoLogBaseUrl;
-        private IRepository<NeuronVertex> neuronRepository;
+        private IRepository<Neuron> neuronRepository;
         private IRepository<Settings> settingsRepository;
         private bool polling;
         private int pollInterval;
 
-        public StandardEventLogClient(string eventInfoLogBaseUrl, int pollInterval, IRepository<Settings> settingsRepository, IRepository<NeuronVertex> neuronRepository)
+        public StandardEventLogClient(string eventInfoLogBaseUrl, int pollInterval, IRepository<Settings> settingsRepository, IRepository<Neuron> neuronRepository)
         {
-            this.eventInfoLogBaseUrl = eventInfoLogBaseUrl;
+            if (StandardEventLogClient.httpClient == null)
+            {
+                StandardEventLogClient.httpClient = new HttpClient()
+                {
+                    BaseAddress = new Uri(eventInfoLogBaseUrl)
+                };
+            }
+
             this.neuronRepository = neuronRepository;
             this.settingsRepository = settingsRepository;
             this.polling = false;
@@ -74,17 +81,17 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Standard
             AssertionConcern.AssertMinimum(lastPosition, 0, nameof(position));
 
             // get current log
-            var currentEventInfoLog = await StandardEventLogClient.GetEventInfoLog(this.eventInfoLogBaseUrl, string.Empty);
+            var currentEventInfoLog = await StandardEventLogClient.GetEventInfoLog(string.Empty);
             EventInfoLog processingEventInfoLog = null;
 
             if (lastPosition == StandardEventLogClient.StartPosition)
                 // get first log from current
-                processingEventInfoLog = await StandardEventLogClient.GetEventInfoLog(this.eventInfoLogBaseUrl, currentEventInfoLog.FirstEventInfoLogId);
+                processingEventInfoLog = await StandardEventLogClient.GetEventInfoLog(currentEventInfoLog.FirstEventInfoLogId);
             else
             {
                 processingEventInfoLog = currentEventInfoLog;
                 while (lastPosition < processingEventInfoLog.DecodedEventInfoLogId.Low)
-                    processingEventInfoLog = await StandardEventLogClient.GetEventInfoLog(this.eventInfoLogBaseUrl, processingEventInfoLog.PreviousEventInfoLogId);
+                    processingEventInfoLog = await StandardEventLogClient.GetEventInfoLog(processingEventInfoLog.PreviousEventInfoLogId);
             }
 
             // while processing logid is not equal to newly retrieved currenteventinfolog
@@ -112,54 +119,50 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Standard
                     }
 
                 if (processingEventInfoLog.HasNextEventInfoLog)
-                    processingEventInfoLog = await StandardEventLogClient.GetEventInfoLog(this.eventInfoLogBaseUrl, processingEventInfoLog.NextEventInfoLogId);
+                    processingEventInfoLog = await StandardEventLogClient.GetEventInfoLog(processingEventInfoLog.NextEventInfoLogId);
                 else
                     break;
             }
         }
 
-        private static async Task<EventInfoLog> GetEventInfoLog(string baseUrl, string destinationLogId)
+        private static async Task<EventInfoLog> GetEventInfoLog(string destinationLogId)
         {
-            using (var httpClient = new HttpClient())
-            {
-                httpClient.BaseAddress = new Uri(baseUrl);
-                var response = await httpClient.GetAsync(
-                    string.Format(StandardEventLogClient.getEventsPathTemplate, destinationLogId)
-                    ).ConfigureAwait(false);
+            var response = await StandardEventLogClient.httpClient.GetAsync(
+                string.Format(StandardEventLogClient.getEventsPathTemplate, destinationLogId)
+                ).ConfigureAwait(false);
 
-                response.EnsureSuccessStatusCode();
-                var eventInfoItems = JsonConvert.DeserializeObject<EventInfo[]>(
-                    await response.Content.ReadAsStringAsync().ConfigureAwait(false)
-                    );
-                var linkHeader = response.Headers.GetValues(Response.Header.Link.Key).First();
+            response.EnsureSuccessStatusCode();
+            var eventInfoItems = JsonConvert.DeserializeObject<EventInfo[]>(
+                await response.Content.ReadAsStringAsync().ConfigureAwait(false)
+                );
+            var linkHeader = response.Headers.GetValues(Response.Header.Link.Key).First();
 
-                AssertionConcern.AssertStateTrue(linkHeader != null, "'Link' header is missing in server response.");
+            AssertionConcern.AssertStateTrue(linkHeader != null, "'Link' header is missing in server response.");
 
-                EventInfoLogId.TryParse(
-                    StandardEventLogClient.GetLogId(linkHeader, Response.Header.Link.Relation.Self),
-                    out EventInfoLogId selfLogId
-                    );
-                EventInfoLogId.TryParse(
-                    StandardEventLogClient.GetLogId(linkHeader, Response.Header.Link.Relation.First),
-                    out EventInfoLogId firstLogId
-                    );
-                EventInfoLogId.TryParse(
-                    StandardEventLogClient.GetLogId(linkHeader, Response.Header.Link.Relation.Next),
-                    out EventInfoLogId nextLogId
-                    );
-                EventInfoLogId.TryParse(
-                    StandardEventLogClient.GetLogId(linkHeader, Response.Header.Link.Relation.Previous),
-                    out EventInfoLogId previousLogId
-                    );
-                return new EventInfoLog(
-                    selfLogId,
-                    firstLogId,
-                    nextLogId,
-                    previousLogId,
-                    eventInfoItems,
-                    nextLogId != null
-                    );
-            }
+            EventInfoLogId.TryParse(
+                StandardEventLogClient.GetLogId(linkHeader, Response.Header.Link.Relation.Self),
+                out EventInfoLogId selfLogId
+                );
+            EventInfoLogId.TryParse(
+                StandardEventLogClient.GetLogId(linkHeader, Response.Header.Link.Relation.First),
+                out EventInfoLogId firstLogId
+                );
+            EventInfoLogId.TryParse(
+                StandardEventLogClient.GetLogId(linkHeader, Response.Header.Link.Relation.Next),
+                out EventInfoLogId nextLogId
+                );
+            EventInfoLogId.TryParse(
+                StandardEventLogClient.GetLogId(linkHeader, Response.Header.Link.Relation.Previous),
+                out EventInfoLogId previousLogId
+                );
+            return new EventInfoLog(
+                selfLogId,
+                firstLogId,
+                nextLogId,
+                previousLogId,
+                eventInfoItems,
+                nextLogId != null
+                );
         }
 
         private static string GetLogId(string linkHeader, Response.Header.Link.Relation relation)

@@ -9,17 +9,17 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events
 {
     public class EventDataProcessor
     {
-        public async Task<bool> Process(IRepository<NeuronVertex> repository, string eventName, string data)
+        public async Task<bool> Process(IRepository<Neuron> repository, string eventName, string data)
         {
             bool result = false;
 
             JObject jd = JsonHelper.JObjectParse(data);
-            NeuronVertex n = null;
-            List<TerminalEdge> tlist = null;
+            Neuron n = null;
+            List<Terminal> tlist = null;
             switch (eventName)
             {
                 case "NeuronCreated":
-                    n = new NeuronVertex()
+                    n = new Neuron()
                     {
                         Id = JsonHelper.GetRequiredValue<string>(jd, "Id"),
                         Data = JsonHelper.GetRequiredValue<string>(jd, "Data"),
@@ -34,13 +34,13 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events
                         JsonHelper.GetRequiredValue<string>(jd, "Id")
                         ));
 
-                    tlist = new List<TerminalEdge>(n.Terminals);
+                    tlist = new List<Terminal>(n.Terminals);
                     foreach (JToken to in JsonHelper.GetRequiredChildren(jd, "Terminals"))
                         tlist.Add(
-                            new TerminalEdge(
+                            new Terminal(
                                 Guid.NewGuid().ToString(),
                                 n.Id,
-                                JsonHelper.GetRequiredValue<string>(to, "Target")
+                                JsonHelper.GetRequiredValue<string>(to, "TargetId")
                             )
                         );
                     n.Terminals = tlist.ToArray();
@@ -65,9 +65,9 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events
                         JsonHelper.GetRequiredValue<string>(jd, "Id")
                         ));
 
-                    tlist = new List<TerminalEdge>(n.Terminals);
+                    tlist = new List<Terminal>(n.Terminals);
                     foreach (JToken to in JsonHelper.GetRequiredChildren(jd, "Terminals"))
-                        tlist.RemoveAll(te => te.Target == JsonHelper.GetRequiredValue<string>(to, "Target"));
+                        tlist.RemoveAll(te => te.TargetId == JsonHelper.GetRequiredValue<string>(to, "TargetId"));
                     n.Terminals = tlist.ToArray();
                     n.Version = JsonHelper.GetRequiredValue<int>(jd, "Version");
                     n.Timestamp = JsonHelper.GetRequiredValue<string>(jd, "TimeStamp");

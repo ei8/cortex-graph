@@ -23,10 +23,10 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.GetEventStore
         private string lastPositionString;
         private readonly Logger logger = LogManager.GetCurrentClassLogger();
         private bool isLive;
-        private IRepository<NeuronVertex> neuronRepository;
+        private IRepository<Neuron> neuronRepository;
         private IRepository<Settings> settingsRepository;
 
-        public EventStoreEventLogClient(IEventStoreConnection connection, IRepository<Settings> settingsRepository, IRepository<NeuronVertex> neuronRepository)
+        public EventStoreEventLogClient(IEventStoreConnection connection, IRepository<Settings> settingsRepository, IRepository<Neuron> neuronRepository)
         {
             this.connection = connection;
             this.lastPositionString = string.Empty;

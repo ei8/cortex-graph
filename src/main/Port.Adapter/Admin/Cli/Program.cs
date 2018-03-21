@@ -6,6 +6,7 @@ using org.neurul.Common.Domain.Model;
 using org.neurul.Common.Http.Cli;
 using System;
 using System.IO;
+using works.ei8.Cortex.Graph.Port.Adapter.Common;
 using works.ei8.Cortex.Graph.Port.Adapter.In.Http;
 
 namespace works.ei8.Cortex.Graph.Port.Adapter.Admin.Cli
@@ -34,8 +35,11 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.Admin.Cli
                     new DefaultConsoleWrapper(),
                     "Cortex Graph",
                     args,
-                    new string[] { "In" },
-                    new INancyBootstrapper[] { new In.Http.CustomBootstrapper(settings) }
+                    new string[] { "In", "Out" },
+                    new INancyBootstrapper[] {
+                            new In.Http.CustomBootstrapper(settings),
+                            new Out.Http.CustomBootstrapper(settings)
+                        }
                     );
             }
             catch (Exception ex)
@@ -44,7 +48,9 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.Admin.Cli
 
                 Console.WriteLine("The following exception occurred:");
                 Console.WriteLine();
-                Console.WriteLine(ex.Message);                
+                Console.WriteLine(ex.Message);
+                Console.WriteLine("Press any key to continue...");
+                Console.ReadLine();
             }
         }
     }

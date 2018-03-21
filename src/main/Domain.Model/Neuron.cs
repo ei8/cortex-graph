@@ -6,11 +6,11 @@ using System.Text;
 
 namespace works.ei8.Cortex.Graph.Domain.Model
 {
-    public class NeuronVertex
+    public class Neuron
     {
-        public NeuronVertex()
+        public Neuron()
         {
-            this.Terminals = new TerminalEdge[] { };
+            this.Terminals = new Terminal[] { };
         }
 
         [DocumentProperty(Identifier = IdentifierType.Key)]
@@ -23,6 +23,6 @@ namespace works.ei8.Cortex.Graph.Domain.Model
         public int Version { get; set; }
 
         [JsonIgnore]
-        public TerminalEdge[] Terminals { get; set; }
+        public Terminal[] Terminals { get; set; }
     }
 }

@@ -5,13 +5,13 @@ using System.Text;
 
 namespace works.ei8.Cortex.Graph.Domain.Model
 {
-    public class TerminalEdge
+    public class Terminal
     {
-        public TerminalEdge(string id, string neuronId, string target)
+        public Terminal(string id, string neuronId, string targetId)
         {           
             this.Id = id;
             this.NeuronId = neuronId;
-            this.Target = target;
+            this.TargetId = targetId;
         }
 
         [DocumentProperty(Identifier = IdentifierType.Key)]
@@ -31,17 +31,17 @@ namespace works.ei8.Cortex.Graph.Domain.Model
             }
         }
 
-        private string target;
+        private string targetId;
         [DocumentProperty(Identifier = IdentifierType.EdgeTo)]
-        public string Target
+        public string TargetId
         {
             get
             {
-                return this.target;
+                return this.targetId;
             }
             set
             {
-                this.target = value;
+                this.targetId = value;
             }
         }
     }

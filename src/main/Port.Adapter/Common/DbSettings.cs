@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace works.ei8.Cortex.Graph.Port.Adapter.In.Http
+namespace works.ei8.Cortex.Graph.Port.Adapter.Common
 {
     public class DbSettings
     {
