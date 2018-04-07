@@ -2,19 +2,17 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp2.0</TargetFramework>
-    <AssemblyName>works.ei8.Cortex.Graph.Port.Adapter.Out.Http</AssemblyName>
-    <RootNamespace>works.ei8.Cortex.Graph.Port.Adapter.Out.Http</RootNamespace>
+    <AssemblyName>works.ei8.Cortex.Graph.Port.Adapter.Out.Api</AssemblyName>
+    <RootNamespace>works.ei8.Cortex.Graph.Port.Adapter.Out.Api</RootNamespace>
     <ApplicationIcon />
-    <OutputType>Library</OutputType>
-    <StartupObject />
+    <OutputType>Exe</OutputType>
+    <StartupObject>works.ei8.Cortex.Graph.Port.Adapter.Out.Api.Program</StartupObject>
+    <DockerComposeProjectPath>..\..\..\..\docker-compose.dcproj</DockerComposeProjectPath>
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="wwwroot\" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.All" Version="2.0.5" />
+    <PackageReference Include="Microsoft.AspNetCore" Version="2.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Owin" Version="2.0.0" />
     <PackageReference Include="Nancy" Version="2.0.0-clinteastwood" />
     <PackageReference Include="Nancy.Serialization.JsonNet" Version="2.0.0-clinteastwood" />
   </ItemGroup>

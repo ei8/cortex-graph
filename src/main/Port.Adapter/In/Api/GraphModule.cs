@@ -2,7 +2,7 @@
 using Nancy;
 using works.ei8.Cortex.Graph.Application.Commands;
 
-namespace works.ei8.Cortex.Graph.Port.Adapter.In.Http
+namespace works.ei8.Cortex.Graph.Port.Adapter.In.Api
 {
     public class GraphModule : NancyModule
     {

@@ -12,22 +12,19 @@ using System.Collections.Generic;
 using System.Linq;
 using works.ei8.Cortex.Graph.Application;
 using works.ei8.Cortex.Graph.Domain.Model;
+using works.ei8.Cortex.Graph.Port.Adapter.Common;
 using works.ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB;
 using works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.GetEventStore;
 using works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Standard;
 
-using AdapterSettings = works.ei8.Cortex.Graph.Port.Adapter.Common.Settings;
-
-namespace works.ei8.Cortex.Graph.Port.Adapter.In.Http
+namespace works.ei8.Cortex.Graph.Port.Adapter.In.Api
 {
     public class CustomBootstrapper : DefaultNancyBootstrapper
     {
-        private AdapterSettings settings;
-
-        public CustomBootstrapper(AdapterSettings settings)
+        public CustomBootstrapper()
         {
-            this.settings = settings;
         }
+
         protected override void ConfigureRequestContainer(TinyIoCContainer container, NancyContext context)
         {
             base.ConfigureRequestContainer(container, context);
@@ -40,8 +37,8 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.In.Http
             container.Register<IRepository<Domain.Model.Settings>, SettingsRepository>();
             container.Register<IEventLogClient, StandardEventLogClient>(
                 new StandardEventLogClient(
-                    this.settings.EventInfoLogBaseUrl,
-                    this.settings.PollInterval,
+                    Environment.GetEnvironmentVariable(EnvironmentVariableKeys.EventInfoLogBaseUrl),
+                    int.Parse(Environment.GetEnvironmentVariable(EnvironmentVariableKeys.PollInterval)),
                     container.Resolve<IRepository<Domain.Model.Settings>>(),
                     container.Resolve<IRepository<Neuron>>()
                     )
@@ -69,9 +66,12 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.In.Http
 
             ArangoDatabase.ChangeSetting(s =>
             {
-                s.Database = this.settings.DbSettings.Name;
-                s.Url = this.settings.DbSettings.Url;
-                s.Credential = new System.Net.NetworkCredential(this.settings.DbSettings.Username, this.settings.DbSettings.Password);
+                s.Database = Environment.GetEnvironmentVariable(EnvironmentVariableKeys.DbName);
+                s.Url = Environment.GetEnvironmentVariable(EnvironmentVariableKeys.DbUrl);
+                s.Credential = new System.Net.NetworkCredential(
+                    Environment.GetEnvironmentVariable(EnvironmentVariableKeys.DbUsername),
+                    Environment.GetEnvironmentVariable(EnvironmentVariableKeys.DbPassword)
+                    );
             });
         }
 

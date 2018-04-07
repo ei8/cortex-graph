@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore;
 
-namespace works.ei8.Cortex.Graph.Port.Adapter.In.Http
+namespace works.ei8.Cortex.Graph.Port.Adapter.In.Api
 {
     public class Program
     {

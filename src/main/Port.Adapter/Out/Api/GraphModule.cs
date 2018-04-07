@@ -4,7 +4,7 @@ using Newtonsoft.Json;
 using System;
 using works.ei8.Cortex.Graph.Application;
 
-namespace works.ei8.Cortex.Graph.Port.Adapter.Out.Http
+namespace works.ei8.Cortex.Graph.Port.Adapter.Out.Api
 {
     public class GraphModule : NancyModule
     {

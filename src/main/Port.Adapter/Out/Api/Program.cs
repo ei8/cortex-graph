@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
-namespace works.ei8.Cortex.Graph.Port.Adapter.Out.Http
+namespace works.ei8.Cortex.Graph.Port.Adapter.Out.Api
 {
     public class Program
     {

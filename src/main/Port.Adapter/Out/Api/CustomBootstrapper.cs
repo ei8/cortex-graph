@@ -7,19 +7,15 @@ using System.Collections.Generic;
 using System.Linq;
 using works.ei8.Cortex.Graph.Application;
 using works.ei8.Cortex.Graph.Domain.Model;
+using works.ei8.Cortex.Graph.Port.Adapter.Common;
 using works.ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB;
 
-using AdapterSettings = works.ei8.Cortex.Graph.Port.Adapter.Common.Settings;
-
-namespace works.ei8.Cortex.Graph.Port.Adapter.Out.Http
+namespace works.ei8.Cortex.Graph.Port.Adapter.Out.Api
 {
     public class CustomBootstrapper : DefaultNancyBootstrapper
     {
-        private AdapterSettings settings;
-
-        public CustomBootstrapper(AdapterSettings settings)
+        public CustomBootstrapper()
         {
-            this.settings = settings;
         }
 
         protected override void ConfigureRequestContainer(TinyIoCContainer container, NancyContext context)
@@ -36,9 +32,12 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.Out.Http
 
             ArangoDatabase.ChangeSetting(s =>
             {
-                s.Database = this.settings.DbSettings.Name;
-                s.Url = this.settings.DbSettings.Url;
-                s.Credential = new System.Net.NetworkCredential(this.settings.DbSettings.Username, this.settings.DbSettings.Password);
+                s.Database = Environment.GetEnvironmentVariable(EnvironmentVariableKeys.DbName);
+                s.Url = Environment.GetEnvironmentVariable(EnvironmentVariableKeys.DbUrl);
+                s.Credential = new System.Net.NetworkCredential(
+                    Environment.GetEnvironmentVariable(EnvironmentVariableKeys.DbUsername),
+                    Environment.GetEnvironmentVariable(EnvironmentVariableKeys.DbPassword)
+                    );
             });
         }
 

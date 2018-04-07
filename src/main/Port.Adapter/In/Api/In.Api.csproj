@@ -2,11 +2,12 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp2.0</TargetFramework>
-    <AssemblyName>works.ei8.Cortex.Graph.Port.Adapter.In.Http</AssemblyName>
-    <RootNamespace>works.ei8.Cortex.Graph.Port.Adapter.In.Http</RootNamespace>
+    <AssemblyName>works.ei8.Cortex.Graph.Port.Adapter.In.Api</AssemblyName>
+    <RootNamespace>works.ei8.Cortex.Graph.Port.Adapter.In.Api</RootNamespace>
     <ApplicationIcon />
-    <OutputType>Library</OutputType>
-    <StartupObject />
+    <OutputType>Exe</OutputType>
+    <StartupObject>works.ei8.Cortex.Graph.Port.Adapter.In.Api.Program</StartupObject>
+    <DockerComposeProjectPath>..\..\..\..\docker-compose.dcproj</DockerComposeProjectPath>
   </PropertyGroup>
 
   <ItemGroup>

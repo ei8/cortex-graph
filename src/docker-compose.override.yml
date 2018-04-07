@@ -1,0 +1,22 @@
+version: '3'
+
+services:
+  in.api:
+    env_file: 
+      - ./var1.env
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+    ports:
+      - "59825:80"
+  out.api:
+    env_file: 
+      - ./var1.env
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+    ports:
+      - "59826:80"
+networks:
+  default:
+    external:
+      name: nat
+
