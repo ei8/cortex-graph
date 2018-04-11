@@ -28,6 +28,7 @@
     <PackageReference Include="Nancy" Version="2.0.0-clinteastwood" />
     <PackageReference Include="Nancy.Serialization.JsonNet" Version="2.0.0-clinteastwood" />
     <PackageReference Include="Neurul.Common.Http" Version="0.1.2" />
+    <PackageReference Include="NLog.Web.AspNetCore" Version="4.5.1" />
   </ItemGroup>
 
   <ItemGroup>
@@ -45,6 +46,9 @@
   <ItemGroup>
     <Content Update="appsettings.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Update="Nlog.config">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
 

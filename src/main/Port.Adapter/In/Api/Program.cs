@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore;
+using NLog.Web;
 
 namespace works.ei8.Cortex.Graph.Port.Adapter.In.Api
 {
@@ -13,17 +14,17 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.In.Api
     {
         public static void Main(string[] args)
         {
-            // NLog: setup the logger first to catch all errors
-            // var logger = NLogBuilder.ConfigureNLog("NLog.config").GetCurrentClassLogger();
+            // setup the logger first to catch all errors
+            var logger = NLogBuilder.ConfigureNLog("NLog.config").GetCurrentClassLogger();
             try
             {
-                // logger.Debug("init main");
+                logger.Debug("Init main.");
                 BuildWebHost(args).Run();
             }
             catch (Exception e)
             {
-                //NLog: catch setup errors
-                // logger.Error(e, "Stopped program because of exception");
+                // catch setup errors
+                logger.Error(e, "Setup failed due to an exception.");
                 throw;
             }
         }
@@ -31,7 +32,7 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.In.Api
         public static IWebHost BuildWebHost(string[] args) =>
             WebHost.CreateDefaultBuilder(args)
                 .UseStartup<Startup>()
-                // .UseNLog()
+                .UseNLog()
                 .Build();
     }
 }
