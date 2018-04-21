@@ -1,28 +1,54 @@
 ﻿using CQRSlite.Commands;
 using Nancy;
+using NLog;
+using System;
 using works.ei8.Cortex.Graph.Application.Commands;
 
 namespace works.ei8.Cortex.Graph.Port.Adapter.In.Api
 {
     public class GraphModule : NancyModule
     {
+        private static readonly Logger logger = LogManager.GetCurrentClassLogger();
+
         public GraphModule(ICommandSender commandSender) : base("/cortex/graph")
         {
-           this.Post("/regenerate", (parameters) =>
-           {
-               var command = new Regenerate();
-               commandSender.Send(command);
-               return new Response { StatusCode = HttpStatusCode.OK };
-           }
-           );
+            this.Post("/regenerate", (parameters) =>
+            {
+                Response result = null;
 
-           this.Post("/resumegeneration", (parameters) =>
-           {
-               var command = new ResumeGeneration();
-               commandSender.Send(command);
-               return new Response { StatusCode = HttpStatusCode.OK };
-           }
-           );
+                try
+                {
+                    var command = new Regenerate();
+                    commandSender.Send(command);
+                    result = new Response { StatusCode = HttpStatusCode.OK };
+                }
+                catch (Exception ex)
+                {
+                    GraphModule.logger.Error(ex, $"An error occurred during graph regeneration: {ex.Message}; Stack Trace: {ex.StackTrace}");
+                }
+
+                return result;
+            }
+            );
+
+            this.Post("/resumegeneration", (parameters) =>
+            {
+                Response result = null;
+
+                try
+                {
+                    var command = new ResumeGeneration();
+                    commandSender.Send(command);
+                    result = new Response { StatusCode = HttpStatusCode.OK };
+                }
+                catch (Exception ex)
+                {
+                    GraphModule.logger.Error(ex, $"An error occurred while resuming graph generation: {ex.Message}; Stack Trace: {ex.StackTrace}");
+                }
+
+                return result;
+            }
+            );
         }
     }
 }
