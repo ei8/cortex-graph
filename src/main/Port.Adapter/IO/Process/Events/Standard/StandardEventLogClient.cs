@@ -26,9 +26,10 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Standard
                 (ex, _) => StandardEventLogClient.logger.Error(ex, "Error occured while subscribing to events. " + ex.InnerException?.Message)
             );
         
-        private static string getEventsPathTemplate = "/cortex/events/{0}";
+        private static string getEventsPathTemplate = "{0}/cortex/events/{1}";
         private const long StartPosition = 0;
 
+        private string avatarId;
         private static readonly Logger logger = LogManager.GetCurrentClassLogger();
         private IRepository<Neuron> neuronRepository;
         private IRepository<Settings> settingsRepository;
@@ -51,47 +52,44 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Standard
             this.pollInterval = pollInterval;
         }
 
-        public async Task Subscribe() => 
-            await this.Subscribe(StandardEventLogClient.StartPosition.ToString());
-
         public async Task Subscribe(string position) =>
             await StandardEventLogClient.exponentialRetryPolicy.ExecuteAsync(async () => await this.SubscribeCore(position).ConfigureAwait(false));
 
         private async Task SubscribeCore(string position)
         {
             this.polling = false;
-            await this.UpdateGraph(position);
+            await StandardEventLogClient.UpdateGraph(this.avatarId, position, this.neuronRepository, this.settingsRepository);
 
             if (!this.polling)
             {
-                StandardEventLogClient.logger.Info("Polling started...");
+                StandardEventLogClient.logger.Info($"[Avatar: {this.avatarId}] Polling started...");
                 this.polling = true;
                 while (this.polling)
                 {
                     await Task.Delay(this.pollInterval);
-                    StandardEventLogClient.logger.Info("Polling subscription update...");
-                    await this.UpdateGraph((await this.settingsRepository.Get(Guid.Empty)).LastPosition);
+                    StandardEventLogClient.logger.Info($"[Avatar: {this.avatarId}] Polling subscription update...");
+                    await StandardEventLogClient.UpdateGraph(this.avatarId, (await this.settingsRepository.Get(Guid.Empty)).LastPosition, this.neuronRepository, this.settingsRepository);
                 }
             }
         }
 
-        private async Task UpdateGraph(string position)
+        private async static Task UpdateGraph(string avatarId, string position, IRepository<Neuron> neuronRepository, IRepository<Settings> settingsRepository)
         {
-            AssertionConcern.AssertStateTrue(long.TryParse(position, out long lastPosition), $"Specified position value of '{position}' is not a valid integer (long).");
+            AssertionConcern.AssertStateTrue(long.TryParse(position, out long lastPosition), $"[Avatar: {avatarId}] Specified position value of '{position}' is not a valid integer (long).");
             AssertionConcern.AssertMinimum(lastPosition, 0, nameof(position));
 
             // get current log
-            var currentEventInfoLog = await StandardEventLogClient.GetEventInfoLog(string.Empty);
+            var currentEventInfoLog = await StandardEventLogClient.GetEventInfoLog(avatarId, string.Empty);
             EventInfoLog processingEventInfoLog = null;
 
             if (lastPosition == StandardEventLogClient.StartPosition)
                 // get first log from current
-                processingEventInfoLog = await StandardEventLogClient.GetEventInfoLog(currentEventInfoLog.FirstEventInfoLogId);
+                processingEventInfoLog = await StandardEventLogClient.GetEventInfoLog(avatarId, currentEventInfoLog.FirstEventInfoLogId);
             else
             {
                 processingEventInfoLog = currentEventInfoLog;
                 while (lastPosition < processingEventInfoLog.DecodedEventInfoLogId.Low)
-                    processingEventInfoLog = await StandardEventLogClient.GetEventInfoLog(processingEventInfoLog.PreviousEventInfoLogId);
+                    processingEventInfoLog = await StandardEventLogClient.GetEventInfoLog(avatarId, processingEventInfoLog.PreviousEventInfoLogId);
             }
 
             // while processing logid is not equal to newly retrieved currenteventinfolog
@@ -102,33 +100,33 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Standard
                     {
                         var eventName = e.GetEventName();
 
-                        StandardEventLogClient.logger.Info($"Processing event '{eventName}' with Sequence Id-{e.SequenceId.ToString()} for Neuron '{e.Id}");
+                        StandardEventLogClient.logger.Info($"[Avatar: {avatarId}] Processing event '{eventName}' with Sequence Id-{e.SequenceId.ToString()} for Neuron '{e.Id}");
 
-                        if (await new EventDataProcessor().Process(this.neuronRepository, eventName, e.Data))
+                        if (await new EventDataProcessor().Process(neuronRepository, eventName, e.Data))
                         {
                             // update current position
                             lastPosition = e.SequenceId;
 
                             if (!processingEventInfoLog.HasNextEventInfoLog && processingEventInfoLog.EventInfoList.Last() == e)
-                                await this.settingsRepository.Save(
+                                await settingsRepository.Save(
                                     new Settings() { Id = Guid.Empty.ToString(), LastPosition = lastPosition.ToString() }
                                     );
                         }
                         else
-                            StandardEventLogClient.logger.Warn("Processing failed.");
+                            StandardEventLogClient.logger.Warn($"[Avatar: {avatarId}] Processing failed.");
                     }
 
                 if (processingEventInfoLog.HasNextEventInfoLog)
-                    processingEventInfoLog = await StandardEventLogClient.GetEventInfoLog(processingEventInfoLog.NextEventInfoLogId);
+                    processingEventInfoLog = await StandardEventLogClient.GetEventInfoLog(avatarId, processingEventInfoLog.NextEventInfoLogId);
                 else
                     break;
             }
         }
 
-        private static async Task<EventInfoLog> GetEventInfoLog(string destinationLogId)
+        private static async Task<EventInfoLog> GetEventInfoLog(string avatarId, string destinationLogId)
         {
             var response = await StandardEventLogClient.httpClient.GetAsync(
-                string.Format(StandardEventLogClient.getEventsPathTemplate, destinationLogId)
+                string.Format(StandardEventLogClient.getEventsPathTemplate, avatarId, destinationLogId)
                 ).ConfigureAwait(false);
 
             response.EnsureSuccessStatusCode();
@@ -174,6 +172,51 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Standard
                 result = link.Substring(link.LastIndexOf('/') + 1);
             }
             return result;
+        }
+
+        public async Task Regenerate()
+        {
+            AssertionConcern.AssertStateTrue(!string.IsNullOrEmpty(this.avatarId), "AvatarId has not been initialized.");
+            await StandardEventLogClient.InitializeRepositories(this.avatarId, this.neuronRepository, this.settingsRepository);
+
+            await this.neuronRepository.Clear();
+            await this.settingsRepository.Clear();
+
+            await this.Subscribe(StandardEventLogClient.StartPosition.ToString());
+        }
+
+        public async Task ResumeGeneration()
+        {
+            AssertionConcern.AssertStateTrue(!string.IsNullOrEmpty(this.avatarId), "AvatarId has not been initialized.");
+            await StandardEventLogClient.InitializeRepositories(this.avatarId, this.neuronRepository, this.settingsRepository);
+
+            var s = await this.settingsRepository.Get(Guid.Empty);
+
+            if (s == null)
+                await this.Regenerate();
+            else
+                await this.Subscribe(s.LastPosition);
+        }
+
+        private async static Task InitializeRepositories(string avatarId, IRepository<Neuron> neuronRepository, IRepository<Settings> settingsRepository)
+        {
+            await neuronRepository.Initialize(avatarId);
+            await settingsRepository.Initialize(avatarId);
+        }
+
+        public Task Stop()
+        {
+            this.polling = false;
+            StandardEventLogClient.logger.Info($"[Avatar: {this.avatarId}] Processing stopped.");
+            return Task.CompletedTask;
+        }
+
+        public void Initialize(string avatarId)
+        {
+            AssertionConcern.AssertArgumentNotNull(avatarId, nameof(avatarId));
+            AssertionConcern.AssertArgumentNotEmpty(avatarId, "Specified avatarId was empty.", nameof(avatarId));
+
+            this.avatarId = avatarId;
         }
     }
 }

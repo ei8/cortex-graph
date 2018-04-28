@@ -4,6 +4,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using works.ei8.Cortex.Graph.Domain.Model;
+using System.Collections.Generic;
 
 namespace works.ei8.Cortex.Graph.Application
 {
@@ -11,43 +12,38 @@ namespace works.ei8.Cortex.Graph.Application
         ICancellableCommandHandler<Regenerate>,
         ICancellableCommandHandler<ResumeGeneration>
     {
+        private IDictionary<string, IEventLogClient> clientCache;
         private IEventLogClient eventLog;
-        private IRepository<Neuron> neuronRepository;
-        private IRepository<Settings> settingsRepository;
-
-        public GraphCommandHandlers(IEventLogClient eventLog, IRepository<Neuron> neuronRepository, 
-            IRepository<Settings> settingsRepository)
+        
+        public GraphCommandHandlers(IDictionary<string, IEventLogClient> clientCache, IEventLogClient eventLog)
         {
+            this.clientCache = clientCache;
             this.eventLog = eventLog;
-            this.neuronRepository = neuronRepository;
-            this.settingsRepository = settingsRepository;
         }
 
-        public Task Handle(Regenerate message, CancellationToken token = default(CancellationToken))
+        public async Task Handle(Regenerate message, CancellationToken token = default(CancellationToken))
         {
-            this.RegenerateCore();
-
-            return Task.CompletedTask;
-        }
-
-        public Task Handle(ResumeGeneration message, CancellationToken token = default(CancellationToken))
-        {
-            var s = this.settingsRepository.Get(Guid.Empty)?.Result;
-
-            if (s == null)
-                this.RegenerateCore();
+            if (this.clientCache.ContainsKey(message.AvatarId))
+                await this.clientCache[message.AvatarId].Stop();
             else
-                this.eventLog.Subscribe(s.LastPosition);
+            {
+                this.eventLog.Initialize(message.AvatarId);
+                this.clientCache.Add(message.AvatarId, this.eventLog);
+            }
 
-            return Task.CompletedTask;
+            await this.clientCache[message.AvatarId].Regenerate();
         }
 
-        private void RegenerateCore()
+        public async Task Handle(ResumeGeneration message, CancellationToken token = default(CancellationToken))
         {
-            this.neuronRepository.Clear();
-            this.settingsRepository.Clear();
+            if (this.clientCache.ContainsKey(message.AvatarId))
+                throw new InvalidOperationException("Graph is already being generated.");
 
-            this.eventLog.Subscribe();
+            this.eventLog.Initialize(message.AvatarId);
+            this.clientCache.Add(message.AvatarId, this.eventLog);
+            await this.eventLog.ResumeGeneration();
         }
+
+        // TODO: stop generation
     }
 }

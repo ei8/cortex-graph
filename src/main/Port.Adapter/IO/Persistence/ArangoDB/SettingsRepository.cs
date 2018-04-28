@@ -10,61 +10,64 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
     public class SettingsRepository : IRepository<Settings>
     {
         private const string CollectionName = "Settings";
+        private string settingName;
 
-        public Task<Settings> Get(Guid dtoGuid, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<Settings> Get(Guid dtoGuid, CancellationToken cancellationToken = default(CancellationToken))
         {
             if (dtoGuid != Guid.Empty)
                 throw new ArgumentException("Invalid 'Settings' document id.");
 
             Settings result = null;
 
-            using (var db = ArangoDatabase.CreateWithSetting())
+            using (var db = ArangoDatabase.CreateWithSetting(this.settingName))
             {
-                if (db.ListCollections().Any(c => c.Name == SettingsRepository.CollectionName))
-                    result = db.Document<Settings>(dtoGuid.ToString());
+                if ((await db.ListCollectionsAsync()).Any(c => c.Name == SettingsRepository.CollectionName))
+                    result = await db.DocumentAsync<Settings>(dtoGuid.ToString());
             }
 
-            return Task.FromResult<Settings>(result);
+            return result;
         }
 
-        public Task Save(Settings dto, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task Save(Settings dto, CancellationToken cancellationToken = default(CancellationToken))
         {
             if (dto.Id != Guid.Empty.ToString())
                 throw new ArgumentException("Invalid 'Settings' document id.");
 
-            using (var db = ArangoDatabase.CreateWithSetting())
+            using (var db = ArangoDatabase.CreateWithSetting(this.settingName))
             {
                 if (!db.ListCollections().Any(c => c.Name == SettingsRepository.CollectionName))
                     throw new InvalidOperationException(
                         $"Collection '{SettingsRepository.CollectionName}' not initialized."
                     );
 
-                if (db.Document<Settings>(dto.Id) == null)
-                    db.Insert<Settings>(dto);
+                if (await db.DocumentAsync<Settings>(dto.Id) == null)
+                    await db.InsertAsync<Settings>(dto);
                 else
-                    db.ReplaceById<Settings>(dto.Id, dto);
+                    await db.ReplaceByIdAsync<Settings>(dto.Id, dto);
             }
-
-            return Task.CompletedTask;
         }
 
-        public Task Clear()
+        public async Task Clear()
         {
-            using (var db = ArangoDatabase.CreateWithSetting())
+            using (var db = ArangoDatabase.CreateWithSetting(this.settingName))
             {
                 var lgs = db.ListGraphs();
-                if (db.ListCollections().Any(c => c.Name == SettingsRepository.CollectionName))
-                    db.DropCollection(SettingsRepository.CollectionName);
+                if ((await db.ListCollectionsAsync()).Any(c => c.Name == SettingsRepository.CollectionName))
+                    await db.DropCollectionAsync(SettingsRepository.CollectionName);
 
-                db.CreateCollection(SettingsRepository.CollectionName);
+                await db.CreateCollectionAsync(SettingsRepository.CollectionName);
             }
-
-            return Task.CompletedTask;
         }
 
         public Task Remove(Settings value, CancellationToken cancellationToken = default(CancellationToken))
         {
             throw new NotImplementedException();
+        }
+
+        public async Task Initialize(string databaseName)
+        {
+            await Helper.CreateDatabase(databaseName);
+            this.settingName = databaseName;
         }
     }
 }

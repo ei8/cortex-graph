@@ -18,10 +18,11 @@ namespace works.ei8.Cortex.Graph.Application
             this.neuronRepository = neuronRepository;
         }
 
-        public async Task<NeuronData> GetNeuronDataById(string id, CancellationToken token = default(CancellationToken))
+        public async Task<NeuronData> GetNeuronDataById(string avatarId, string id, CancellationToken token = default(CancellationToken))
         {
             NeuronData result = null;
 
+            await this.neuronRepository.Initialize(avatarId);
             var nv = await this.neuronRepository.Get(Guid.Parse(id));
             if (nv != null)
             {
@@ -55,15 +56,17 @@ namespace works.ei8.Cortex.Graph.Application
             return result;
         }
 
-        public async Task<IEnumerable<DendriteData>> GetAllDendritesById(string id, CancellationToken token = default(CancellationToken))
+        public async Task<IEnumerable<DendriteData>> GetAllDendritesById(string avatarId, string id, CancellationToken token = default(CancellationToken))
         {
+            await this.neuronRepository.Initialize(avatarId);
             return (await this.neuronRepository.GetDendritesById(Guid.Parse(id))).Select(
                     nv => new DendriteData() { Id = nv.Id, Data = nv.Data, Version = nv.Version }
                 ).ToArray();
         }
 
-        public async Task<IEnumerable<NeuronData>> GetAllNeuronsByDataSubstring(string dataSubstring, CancellationToken token = default(CancellationToken))
+        public async Task<IEnumerable<NeuronData>> GetAllNeuronsByDataSubstring(string avatarId, string dataSubstring, CancellationToken token = default(CancellationToken))
         {
+            await this.neuronRepository.Initialize(avatarId);
             return await Task.WhenAll(
                     (await this.neuronRepository.GetByDataSubstring(dataSubstring, token)).Select(
                         async (n) => (await this.ConvertNeuronToData(n))

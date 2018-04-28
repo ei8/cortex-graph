@@ -25,31 +25,5 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.Out.Api
             container.Register<INeuronRepository, NeuronRepository>();
             container.Register<INeuronQueryService, NeuronQueryService>();
         }
-
-        protected override void ApplicationStartup(TinyIoCContainer container, IPipelines pipelines)
-        {
-            base.ApplicationStartup(container, pipelines);
-
-            ArangoDatabase.ChangeSetting(s =>
-            {
-                s.Database = Environment.GetEnvironmentVariable(EnvironmentVariableKeys.DbName);
-                s.Url = Environment.GetEnvironmentVariable(EnvironmentVariableKeys.DbUrl);
-                s.Credential = new System.Net.NetworkCredential(
-                    Environment.GetEnvironmentVariable(EnvironmentVariableKeys.DbUsername),
-                    Environment.GetEnvironmentVariable(EnvironmentVariableKeys.DbPassword)
-                    );
-            });
-        }
-
-        /// <summary>
-        /// Register only NancyModules found in this assembly
-        /// </summary>
-        protected override IEnumerable<ModuleRegistration> Modules
-        {
-            get
-            {
-                return GetType().Assembly.GetTypes().Where(type => type.BaseType == typeof(NancyModule)).Select(type => new ModuleRegistration(type));
-            }
-        }
     }
 }

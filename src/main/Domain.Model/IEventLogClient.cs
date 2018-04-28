@@ -11,8 +11,12 @@ namespace works.ei8.Cortex.Graph.Domain.Model
     /// </summary>
     public interface IEventLogClient
     {
-        Task Subscribe(); 
+        void Initialize(string avatarId);
 
-        Task Subscribe(string position); 
+        Task Regenerate();
+
+        Task ResumeGeneration();
+
+        Task Stop();
     }
 }

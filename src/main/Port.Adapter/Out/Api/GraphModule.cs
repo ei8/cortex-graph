@@ -8,29 +8,29 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.Out.Api
 {
     public class GraphModule : NancyModule
     {
-        public GraphModule(INeuronQueryService queryService) : base("/cortex/graph")
+        public GraphModule(INeuronQueryService queryService) : base("/{avatarId}/cortex/graph/neurons")
         {
-            this.Get("/neurons/{neuronid:guid}", async (parameters) =>
+            this.Get("/{neuronid:guid}", async (parameters) =>
             {
-                var nv = await queryService.GetNeuronDataById(parameters.neuronid);
+                var nv = await queryService.GetNeuronDataById(parameters.avatarId, parameters.neuronid);
                 return new TextResponse(JsonConvert.SerializeObject(nv));
             }
             );
 
-            this.Get("/neurons/{neuronid}/dendrites", async (parameters) =>
+            this.Get("/{neuronid}/dendrites", async (parameters) =>
             {
-                var nv = await queryService.GetAllDendritesById(parameters.neuronid);
+                var nv = await queryService.GetAllDendritesById(parameters.avatarId, parameters.neuronid);
                 return new TextResponse(JsonConvert.SerializeObject(nv));
             }
             );
 
-            this.Get("/neurons/{function}", async (parameters) =>
+            this.Get("/{function}", async (parameters) =>
             {
                 object response = null;
 
                 if (parameters.function == "search")
                 {
-                    response = await queryService.GetAllNeuronsByDataSubstring(this.Request.Query["data"]);
+                    response = await queryService.GetAllNeuronsByDataSubstring(parameters.avatarId, this.Request.Query["data"]);
                 }
 
                 return new TextResponse(JsonConvert.SerializeObject(response));

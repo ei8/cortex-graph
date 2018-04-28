@@ -10,10 +10,10 @@ namespace works.ei8.Cortex.Graph.Application
 {
     public interface INeuronQueryService
     {
-        Task<NeuronData> GetNeuronDataById(string id, CancellationToken token = default(CancellationToken));
+        Task<NeuronData> GetNeuronDataById(string avatarId, string id, CancellationToken token = default(CancellationToken));
 
-        Task<IEnumerable<NeuronData>> GetAllNeuronsByDataSubstring(string dataSubstring, CancellationToken token = default(CancellationToken));
+        Task<IEnumerable<NeuronData>> GetAllNeuronsByDataSubstring(string avatarId, string dataSubstring, CancellationToken token = default(CancellationToken));
 
-        Task<IEnumerable<DendriteData>> GetAllDendritesById(string id, CancellationToken token = default(CancellationToken));
+        Task<IEnumerable<DendriteData>> GetAllDendritesById(string avatarId, string id, CancellationToken token = default(CancellationToken));
     }
 }

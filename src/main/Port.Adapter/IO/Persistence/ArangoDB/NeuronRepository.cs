@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using works.ei8.Cortex.Graph.Domain.Model;
+using works.ei8.Cortex.Graph.Port.Adapter.Common;
 
 namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
 {
@@ -13,10 +14,15 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
     {
         private const string GraphName = "Graph";
         private const string EdgePrefix = nameof(Neuron) + "/";
+        private string settingName;
+
+        public NeuronRepository()
+        {            
+        }
 
         public async Task Clear()
         {
-            using (var db = ArangoDatabase.CreateWithSetting())
+            using (var db = ArangoDatabase.CreateWithSetting(this.settingName))
             {
                 var lgs = await db.ListGraphsAsync();
                 if (lgs.Any(a => a.Id == "_graphs/" + NeuronRepository.GraphName))
@@ -38,7 +44,7 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
         {
             Neuron result = null;
 
-            using (var db = ArangoDatabase.CreateWithSetting())
+            using (var db = ArangoDatabase.CreateWithSetting(this.settingName))
             {
                 if (!db.ListGraphs().Any(a => a.Id == "_graphs/" + NeuronRepository.GraphName))
                     throw new InvalidOperationException($"Graph '{NeuronRepository.GraphName}' not initialized.");
@@ -66,7 +72,7 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
         {
             IEnumerable<Neuron> result = null;
 
-            using (var db = ArangoDatabase.CreateWithSetting())
+            using (var db = ArangoDatabase.CreateWithSetting(this.settingName))
             {
                 result = db.Query<Neuron>().Where(n => AQL.Contains(AQL.Upper(n.Data), AQL.Upper(dataSubstring))).ToArray();
                 foreach (var n in result)
@@ -97,7 +103,7 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
         {
             IList<Dendrite> result = null;
 
-            using (var db = ArangoDatabase.CreateWithSetting())
+            using (var db = ArangoDatabase.CreateWithSetting(this.settingName))
             {
                 var idstr = EdgePrefix + id.ToString();
                 var edges = db.Query<Terminal>().Where(te => idstr == te.TargetId).ToArray();
@@ -110,7 +116,7 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
 
         public async Task Remove(Neuron value, CancellationToken token = default(CancellationToken))
         {
-            using (var db = ArangoDatabase.CreateWithSetting())
+            using (var db = ArangoDatabase.CreateWithSetting(this.settingName))
             {
                 if (!db.ListGraphs().Any(a => a.Id == "_graphs/" + NeuronRepository.GraphName))
                     throw new InvalidOperationException($"Graph '{NeuronRepository.GraphName}' not initialized.");
@@ -148,7 +154,7 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
 
         public async Task Save(Neuron value, CancellationToken token = default(CancellationToken))
         {
-            using (var db = ArangoDatabase.CreateWithSetting())
+            using (var db = ArangoDatabase.CreateWithSetting(this.settingName))
             {
                 if (!db.ListGraphs().Any(a => a.Id == "_graphs/" + NeuronRepository.GraphName))
                     throw new InvalidOperationException($"Graph '{NeuronRepository.GraphName}' not initialized.");
@@ -196,6 +202,12 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
                     }
                     );
             }
+        }
+
+        public async Task Initialize(string databaseName)
+        {
+            await Helper.CreateDatabase(databaseName);
+            this.settingName = databaseName;
         }
     }
 }
