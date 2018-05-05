@@ -17,5 +17,7 @@ namespace works.ei8.Cortex.Graph.Application.Data
         public int Version { get; set; }
 
         public TerminalData[] Terminals { get; set; }
+
+        public string[] Errors { get; set; }
     }
 }

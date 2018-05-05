@@ -6,7 +6,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using works.ei8.Cortex.Graph.Domain.Model;
-using works.ei8.Cortex.Graph.Port.Adapter.Common;
 
 namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
 {
@@ -51,7 +50,25 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
 
                 result = await db.DocumentAsync<Neuron>(guid.ToString());
                 if (result != null)
+                {
                     result.Terminals = await NeuronRepository.GetTerminals(guid.ToString(), db);
+
+                    int c = db.Query()
+                        .Traversal<Neuron, Terminal>(EdgePrefix + guid.ToString())
+                        .Depth(1, 999)
+                        .OutBound()
+                        .Graph(NeuronRepository.GraphName)
+                        .Filter(n => n.Vertex.Id == guid.ToString())
+                        .Select(g => g.Vertex.Id)
+                        .ToList()
+                        .Count();
+                        
+                    if (c > 0)
+                        result.Errors = new string[]
+                        {
+                            "Circular reference detected."
+                        };
+                }
             }
 
             return result;

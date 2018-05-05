@@ -10,7 +10,8 @@ namespace works.ei8.Cortex.Graph.Domain.Model
     {
         public Neuron()
         {
-            this.Terminals = new Terminal[] { };
+            this.Terminals = new Terminal[0];
+            this.Errors = new string[0];
         }
 
         [DocumentProperty(Identifier = IdentifierType.Key)]
@@ -21,6 +22,9 @@ namespace works.ei8.Cortex.Graph.Domain.Model
         public string Timestamp { get; set; }
 
         public int Version { get; set; }
+
+        [JsonIgnore]
+        public string[] Errors { get; set; }
 
         [JsonIgnore]
         public Terminal[] Terminals { get; set; }

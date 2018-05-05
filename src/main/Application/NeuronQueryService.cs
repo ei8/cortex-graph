@@ -40,17 +40,25 @@ namespace works.ei8.Cortex.Graph.Application
                 Data = nv.Data,
                 Timestamp = nv.Timestamp,
                 Version = nv.Version,
-                Terminals = nv.Terminals.Select(t => new TerminalData() { Id = t.Id, TargetId = t.TargetId }).ToArray()
+                Terminals = nv.Terminals.Select(t => new TerminalData() { Id = t.Id, TargetId = t.TargetId }).ToArray(),
+                Errors = nv.Errors
             };
 
             if (loadTerminalData)
             {
+                var missingTargets = new List<string>();
                 var ts = await this.neuronRepository.GetByIds(result.Terminals.Select(ted => Guid.Parse(ted.TargetId)).ToArray());
                 result.Terminals.ToList().ForEach(
-                    ted => ted.TargetData = ts.Any(anv => anv != null && anv.Id == ted.TargetId) ? 
-                        ts.First(fnv => fnv != null && fnv.Id == ted.TargetId).Data :
-                        "[Not found]"
-                    );
+                    ted => {
+                        if (ts.Any(anv => anv != null && anv.Id == ted.TargetId))
+                            ted.TargetData = ts.First(fnv => fnv != null && fnv.Id == ted.TargetId).Data;
+                        else
+                        {
+                            ted.TargetData = "[Not found]";
+                            missingTargets.Add($"Unable to find Neuron with ID '{ted.Id}'");
+                        }
+                    });
+                result.Errors = result.Errors.Concat(missingTargets.ToArray()).ToArray();
             }
 
             return result;
