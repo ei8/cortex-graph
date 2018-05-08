@@ -27,6 +27,9 @@ namespace works.ei8.Cortex.Graph.Application
             if (nv != null)
             {
                 result = await ConvertNeuronToData(nv, true);
+                result.Dendrites = (await this.neuronRepository.GetDendritesById(Guid.Parse(id))).Select(
+                    d => new DendriteData() { Id = d.Id, Data = d.Data, Version = d.Version }
+                ).ToArray();
             }
 
             return result;

@@ -18,6 +18,8 @@ namespace works.ei8.Cortex.Graph.Application.Data
 
         public TerminalData[] Terminals { get; set; }
 
+        public DendriteData[] Dendrites { get; set; }
+
         public string[] Errors { get; set; }
     }
 }
