@@ -21,11 +21,10 @@
     },
     "Out.Api": {
       "commandName": "Project",
-      "launchBrowser": true,
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       },
-      "applicationUrl": "http://localhost:50532/"
+      "applicationUrl": "http://192.168.8.102:59826/"
     }
   }
 }

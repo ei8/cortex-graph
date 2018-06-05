@@ -1,5 +1,6 @@
 ﻿using Nancy;
 using Nancy.Responses;
+using Nancy.Security;
 using Newtonsoft.Json;
 using System;
 using works.ei8.Cortex.Graph.Application;
@@ -10,6 +11,8 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.Out.Api
     {
         public GraphModule(INeuronQueryService queryService) : base("/{avatarId}/cortex/graph/neurons")
         {
+            this.RequiresAuthentication();
+
             this.Get("/{neuronid:guid}", async (parameters) =>
             {
                 var nv = await queryService.GetNeuronDataById(parameters.avatarId, parameters.neuronid);
@@ -30,6 +33,7 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.Out.Api
 
                 if (parameters.function == "search")
                 {
+                    // TODO: this.RequiresAnyClaim(c => c.Type == $"{parameters.avatarId}_owner" && c.Value == {neuronOwnerNeuronId});
                     response = await queryService.GetAllNeuronsByDataSubstring(parameters.avatarId, this.Request.Query["data"]);
                 }
 
