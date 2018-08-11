@@ -43,7 +43,7 @@ namespace works.ei8.Cortex.Graph.Application
                 Data = nv.Data,
                 Timestamp = nv.Timestamp,
                 Version = nv.Version,
-                Terminals = nv.Terminals.Select(t => new TerminalData() { Id = t.Id, TargetId = t.TargetId }).ToArray(),
+                Terminals = nv.Terminals.Select(t => new TerminalData() { Id = t.Id, TargetId = t.TargetId, Effect = t.Effect.ToString(), Strength = t.Strength.ToString() }).ToArray(),
                 Errors = nv.Errors
             };
 

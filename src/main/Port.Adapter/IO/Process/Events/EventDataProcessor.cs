@@ -40,7 +40,9 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events
                             new Terminal(
                                 Guid.NewGuid().ToString(),
                                 n.Id,
-                                JsonHelper.GetRequiredValue<string>(to, "TargetId")
+                                JsonHelper.GetRequiredValue<string>(to, "TargetId"),
+                                (NeurotransmitterEffect)Enum.Parse(typeof(NeurotransmitterEffect), JsonHelper.GetRequiredValue<string>(to, "Effect")),
+                                JsonHelper.GetRequiredValue<float>(to, "Strength")
                             )
                         );
                     n.Terminals = tlist.ToArray();
@@ -66,8 +68,8 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events
                         ));
 
                     tlist = new List<Terminal>(n.Terminals);
-                    foreach (JToken to in JsonHelper.GetRequiredChildren(jd, "Terminals"))
-                        tlist.RemoveAll(te => te.TargetId == JsonHelper.GetRequiredValue<string>(to, "TargetId"));
+                    foreach (JToken to in JsonHelper.GetRequiredChildren(jd, "TargetIds"))
+                        tlist.RemoveAll(te => te.TargetId == to.Value<string>());
                     n.Terminals = tlist.ToArray();
                     n.Version = JsonHelper.GetRequiredValue<int>(jd, "Version");
                     n.Timestamp = JsonHelper.GetRequiredValue<string>(jd, "TimeStamp");

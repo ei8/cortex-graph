@@ -12,5 +12,10 @@ namespace works.ei8.Cortex.Graph.Application.Data
         public string TargetId { get; set; }
 
         public string TargetData { get; set; }
+
+        public string Effect { get; set; }
+
+        public string Strength { get; set; }
+
     }
 }

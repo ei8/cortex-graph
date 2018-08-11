@@ -11,7 +11,7 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.Out.Api
     {
         public GraphModule(INeuronQueryService queryService) : base("/{avatarId}/cortex/graph/neurons")
         {
-            this.RequiresAuthentication();
+            // TODO: this.RequiresAuthentication();
 
             this.Get("/{neuronid:guid}", async (parameters) =>
             {

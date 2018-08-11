@@ -186,10 +186,14 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Test.EventDataPr
                 protected override string Data => @"{
   ""Terminals"": [
     {
-      ""TargetId"": """ + this.terminal1Id + @"""
+      ""TargetId"": """ + this.terminal1Id + @""",
+      ""Effect"": 1,
+      ""Strength"": 1.0 
     },
     {
-      ""TargetId"": """ + this.terminal2Id + @"""
+      ""TargetId"": """ + this.terminal2Id + @""",
+      ""Effect"": 1,
+      ""Strength"": 1.0 
     }
   ],
   ""Id"": """ + this.guid.ToString() + @""",
@@ -259,8 +263,8 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Test.EventDataPr
                         Data = this.initialData,
                         Terminals = new Terminal[]
                         {
-                            new Terminal(Guid.NewGuid().ToString(), id.ToString(), this.terminal1Id),
-                            new Terminal(Guid.NewGuid().ToString(), id.ToString(), this.terminal2Id),
+                            new Terminal(Guid.NewGuid().ToString(), id.ToString(), this.terminal1Id, NeurotransmitterEffect.Excite, 1),
+                            new Terminal(Guid.NewGuid().ToString(), id.ToString(), this.terminal2Id, NeurotransmitterEffect.Excite, 1),
                         }
                     };
                 }
@@ -268,10 +272,8 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Test.EventDataPr
                 protected override string EventName => "TerminalsRemoved";
 
                 protected override string Data => @"{
-  ""Terminals"": [
-    {
-      ""TargetId"": """ + this.terminal1Id + @"""
-    }
+  ""TargetIds"": [
+    """ + this.terminal1Id + @"""
   ],
   ""Id"": """ + this.guid.ToString() + @""",
   ""Version"": """ + this.version.ToString() + @""",
@@ -348,7 +350,7 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Test.EventDataPr
                         Data = this.initialData,
                         Terminals = new Terminal[]
                         {
-                                new Terminal(Guid.NewGuid().ToString(), id.ToString(), this.terminalId),
+                                new Terminal(Guid.NewGuid().ToString(), id.ToString(), this.terminalId, NeurotransmitterEffect.Excite, 1),
                         }
                     };
                 }

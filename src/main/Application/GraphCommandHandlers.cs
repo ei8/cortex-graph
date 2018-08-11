@@ -12,10 +12,10 @@ namespace works.ei8.Cortex.Graph.Application
         ICancellableCommandHandler<Regenerate>,
         ICancellableCommandHandler<ResumeGeneration>
     {
-        private IDictionary<string, IEventLogClient> clientCache;
-        private IEventLogClient eventLog;
+        private IDictionary<string, INotificationLogClient> clientCache;
+        private INotificationLogClient eventLog;
         
-        public GraphCommandHandlers(IDictionary<string, IEventLogClient> clientCache, IEventLogClient eventLog)
+        public GraphCommandHandlers(IDictionary<string, INotificationLogClient> clientCache, INotificationLogClient eventLog)
         {
             this.clientCache = clientCache;
             this.eventLog = eventLog;

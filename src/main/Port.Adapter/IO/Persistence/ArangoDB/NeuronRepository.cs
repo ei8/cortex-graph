@@ -80,7 +80,9 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
                 .Select(x => new Terminal(
                     x.Id,
                     x.NeuronId.Substring(EdgePrefix.Length),
-                    x.TargetId.Substring(EdgePrefix.Length)
+                    x.TargetId.Substring(EdgePrefix.Length),
+                    x.Effect,
+                    x.Strength
                 )
             ).ToArray();
         }
@@ -182,7 +184,9 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
                         new Terminal(
                             td.Id,
                             EdgePrefix + td.NeuronId,
-                            EdgePrefix + td.TargetId
+                            EdgePrefix + td.TargetId,
+                            td.Effect,
+                            td.Strength
                             )
                         );
 

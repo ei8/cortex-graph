@@ -7,11 +7,13 @@ namespace works.ei8.Cortex.Graph.Domain.Model
 {
     public class Terminal
     {
-        public Terminal(string id, string neuronId, string targetId)
+        public Terminal(string id, string neuronId, string targetId, NeurotransmitterEffect effect, float strength)
         {           
             this.Id = id;
             this.NeuronId = neuronId;
             this.TargetId = targetId;
+            this.Effect = effect;
+            this.Strength = strength;
         }
 
         [DocumentProperty(Identifier = IdentifierType.Key)]
@@ -43,6 +45,22 @@ namespace works.ei8.Cortex.Graph.Domain.Model
             {
                 this.targetId = value;
             }
+        }
+
+        private NeurotransmitterEffect effect;
+
+        public NeurotransmitterEffect Effect
+        {
+            get { return effect; }
+            set { effect = value; }
+        }
+
+        private float strength;
+
+        public float Strength
+        {
+            get { return strength; }
+            set { strength = value; }
         }
     }
 }
