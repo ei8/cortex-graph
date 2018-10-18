@@ -39,13 +39,14 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.In.Api
 
             container.Register<IRepository<Neuron>, NeuronRepository>();
             container.Register<IRepository<Domain.Model.Settings>, SettingsRepository>();
-            container.Register<INotificationLogClient>((t, n) => 
-                new StandardNotificationLogClient(
-                    Environment.GetEnvironmentVariable(EnvironmentVariableKeys.EventInfoLogBaseUrl),
-                    int.Parse(Environment.GetEnvironmentVariable(EnvironmentVariableKeys.PollInterval)),
-                    container.Resolve<IRepository<Domain.Model.Settings>>(),
-                    container.Resolve<IRepository<Neuron>>()
-                    )
+            container.Register<Func<INotificationLogClient>>(() => {
+                return new StandardNotificationLogClient(
+                        Environment.GetEnvironmentVariable(EnvironmentVariableKeys.EventInfoLogBaseUrl),
+                        int.Parse(Environment.GetEnvironmentVariable(EnvironmentVariableKeys.PollInterval)),
+                        container.Resolve<IRepository<Domain.Model.Settings>>(),
+                        container.Resolve<IRepository<Neuron>>()
+                        );
+                    }
                     );
         }
 

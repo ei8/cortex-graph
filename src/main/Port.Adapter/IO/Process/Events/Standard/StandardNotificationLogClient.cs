@@ -52,7 +52,7 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Standard
             this.pollInterval = pollInterval;
         }
 
-        public async Task Subscribe(string position) =>
+        private async Task Subscribe(string position) =>
             await StandardNotificationLogClient.exponentialRetryPolicy.ExecuteAsync(async () => await this.SubscribeCore(position).ConfigureAwait(false));
 
         private async Task SubscribeCore(string position)

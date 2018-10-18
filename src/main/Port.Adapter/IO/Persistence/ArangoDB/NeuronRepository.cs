@@ -230,5 +230,22 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
             await Helper.CreateDatabase(databaseName);
             this.settingName = databaseName;
         }
+
+        public async Task<IEnumerable<Neuron>> GetAll(int? limit = 1000)
+        {
+            IEnumerable<Neuron> result = null;
+
+            using (var db = ArangoDatabase.CreateWithSetting(this.settingName))
+            {
+                result = db.All<Neuron>(null, limit).ToList().AsEnumerable();
+                foreach (var n in result)
+                {
+                    var ts = await NeuronRepository.GetTerminals(n.Id, db);
+                    n.Terminals = ts;
+                }
+            }
+
+            return result;
+        }
     }
 }

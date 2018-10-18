@@ -18,6 +18,16 @@ namespace works.ei8.Cortex.Graph.Application
             this.neuronRepository = neuronRepository;
         }
 
+        public async Task<IEnumerable<NeuronData>> GetAllNeurons(string avatarId, int? limit = 1000, CancellationToken token = default(CancellationToken))
+        {
+            await this.neuronRepository.Initialize(avatarId);
+            return await Task.WhenAll(
+                    (await this.neuronRepository.GetAll(limit)).Select(
+                        async (n) => (await this.ConvertNeuronToData(n, true))
+                    )
+                );
+        }
+
         public async Task<NeuronData> GetNeuronDataById(string avatarId, string id, CancellationToken token = default(CancellationToken))
         {
             NeuronData result = null;
