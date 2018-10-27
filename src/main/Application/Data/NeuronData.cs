@@ -10,15 +10,19 @@ namespace works.ei8.Cortex.Graph.Application.Data
     {
         public string Id { get; set; }
 
+        public string CentralId { get; set; }
+
         public string Data { get; set; }
 
-        public string Timestamp { get; set; }
+        public RelativeType Type { get; set; }
 
         public int Version { get; set; }
 
-        public TerminalData[] Terminals { get; set; }
+        public string Timestamp { get; set; }
 
-        public DendriteData[] Dendrites { get; set; }
+        public string Effect { get; set; }
+
+        public string Strength { get; set; }
 
         public string[] Errors { get; set; }
     }

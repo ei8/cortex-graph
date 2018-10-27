@@ -18,81 +18,81 @@ namespace works.ei8.Cortex.Graph.Application
             this.neuronRepository = neuronRepository;
         }
 
-        public async Task<IEnumerable<NeuronData>> GetAllNeurons(string avatarId, int? limit = 1000, CancellationToken token = default(CancellationToken))
+        public async Task<IEnumerable<NeuronData>> GetNeurons(string avatarId, string centralId = default(string), Data.RelativeType type = Data.RelativeType.NotSet, string filter = default(string), 
+            int? limit = 1000, CancellationToken token = default(CancellationToken))
         {
             await this.neuronRepository.Initialize(avatarId);
-            return await Task.WhenAll(
-                    (await this.neuronRepository.GetAll(limit)).Select(
-                        async (n) => (await this.ConvertNeuronToData(n, true))
+            return (await this.neuronRepository.GetAll(
+                    NeuronQueryService.GetNullableStringGuid(centralId), 
+                    NeuronQueryService.GetRelativeDomainModel(type), 
+                    filter, 
+                    limit)
                     )
-                );
+                .Select((n) => (this.ConvertNeuronToData(n, centralId)));
         }
 
-        public async Task<NeuronData> GetNeuronDataById(string avatarId, string id, CancellationToken token = default(CancellationToken))
+        private static Domain.Model.RelativeType GetRelativeDomainModel(Data.RelativeType type)
+        {
+            return (Domain.Model.RelativeType)((int)type);
+        }
+
+        private static Guid? GetNullableStringGuid(string value)
+        {
+            return (value == null ? (Guid?) null : Guid.Parse(value));
+        }
+
+        public async Task<IEnumerable<NeuronData>> GetNeuronById(string avatarId, string id, string centralId = default(string), Data.RelativeType type = Data.RelativeType.NotSet, CancellationToken token = default(CancellationToken))
+        {
+            IEnumerable<NeuronData> result = null;
+
+            await this.neuronRepository.Initialize(avatarId);
+            result = (await this.neuronRepository.Get(Guid.Parse(id), NeuronQueryService.GetNullableStringGuid(centralId), NeuronQueryService.GetRelativeDomainModel(type)))
+                .Select(n => this.ConvertNeuronToData(n, centralId));
+
+            return result;
+        }
+
+        private NeuronData ConvertNeuronToData(NeuronResult nv, string centralId)
         {
             NeuronData result = null;
 
-            await this.neuronRepository.Initialize(avatarId);
-            var nv = await this.neuronRepository.Get(Guid.Parse(id));
-            if (nv != null)
+            try
             {
-                result = await ConvertNeuronToData(nv, true);
-                result.Dendrites = (await this.neuronRepository.GetDendritesById(Guid.Parse(id))).Select(
-                    d => new DendriteData() { Id = d.Id, Data = d.Data, Version = d.Version }
-                ).ToArray();
+                result = new NeuronData
+                {
+                    CentralId = centralId
+                };
+
+                if (nv.Neuron != null)
+                {
+                    result.Id = nv.Neuron.Id;
+                    result.Data = nv.Neuron.Data;
+                    result.Timestamp = nv.Neuron.Timestamp;
+                    result.Version = nv.Neuron.Version;
+                }
+                
+                if (nv.Terminal != null)
+                {
+                    if (nv.Neuron != null)
+                        result.Type = nv.Neuron.Id == nv.Terminal.NeuronId ? Data.RelativeType.Presynaptic : Data.RelativeType.Postsynaptic;
+                    else
+                    {
+                        // If terminal is set but neuron is not set, terminal is targetting a deactivated neuron
+                        result.Type = Data.RelativeType.Postsynaptic;
+                        result.Data = "[Not found]";
+                        result.Id = nv.Terminal.TargetId;
+                        result.Errors = new string[] { $"Unable to find Neuron with ID '{nv.Terminal.TargetId}'" };
+                    }
+
+                    result.Effect = ((int) nv.Terminal.Effect).ToString();
+                    result.Strength = nv.Terminal.Strength.ToString();
+                }
             }
-
-            return result;
-        }
-
-        private async Task<NeuronData> ConvertNeuronToData(Neuron nv, bool loadTerminalData = false)
-        {
-            NeuronData result = new NeuronData()
+            catch (Exception ex)
             {
-                Id = nv.Id,
-                Data = nv.Data,
-                Timestamp = nv.Timestamp,
-                Version = nv.Version,
-                Terminals = nv.Terminals.Select(t => new TerminalData() { Id = t.Id, TargetId = t.TargetId, Effect = t.Effect.ToString(), Strength = t.Strength.ToString() }).ToArray(),
-                Errors = nv.Errors
-            };
-
-            if (loadTerminalData)
-            {
-                var missingTargets = new List<string>();
-                var ts = await this.neuronRepository.GetByIds(result.Terminals.Select(ted => Guid.Parse(ted.TargetId)).ToArray());
-                result.Terminals.ToList().ForEach(
-                    ted => {
-                        if (ts.Any(anv => anv != null && anv.Id == ted.TargetId))
-                            ted.TargetData = ts.First(fnv => fnv != null && fnv.Id == ted.TargetId).Data;
-                        else
-                        {
-                            ted.TargetData = "[Not found]";
-                            missingTargets.Add($"Unable to find Neuron with ID '{ted.Id}'");
-                        }
-                    });
-                result.Errors = result.Errors.Concat(missingTargets.ToArray()).ToArray();
+                throw new ArgumentException($"An exception occurred while converting Neuron '{nv.Neuron.Data}' (Id:{nv.Neuron.Id}). Details:\n{ex.Message}", ex);
             }
-
             return result;
-        }
-
-        public async Task<IEnumerable<DendriteData>> GetAllDendritesById(string avatarId, string id, CancellationToken token = default(CancellationToken))
-        {
-            await this.neuronRepository.Initialize(avatarId);
-            return (await this.neuronRepository.GetDendritesById(Guid.Parse(id))).Select(
-                    nv => new DendriteData() { Id = nv.Id, Data = nv.Data, Version = nv.Version }
-                ).ToArray();
-        }
-
-        public async Task<IEnumerable<NeuronData>> GetAllNeuronsByDataSubstring(string avatarId, string dataSubstring, CancellationToken token = default(CancellationToken))
-        {
-            await this.neuronRepository.Initialize(avatarId);
-            return await Task.WhenAll(
-                    (await this.neuronRepository.GetByDataSubstring(dataSubstring, token)).Select(
-                        async (n) => (await this.ConvertNeuronToData(n))
-                    )
-                );
         }
     }
 }

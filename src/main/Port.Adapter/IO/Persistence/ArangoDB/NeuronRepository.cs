@@ -41,93 +41,122 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
 
         public async Task<Neuron> Get(Guid guid, CancellationToken token = default(CancellationToken))
         {
-            Neuron result = null;
+            return (await this.Get(guid, shouldLoadTerminals:true)).FirstOrDefault()?.Neuron;
+        }
+
+        private static EdgeDirection ConvertRelativeToDirection(RelativeType type)
+        {
+            switch (type)
+            {
+                case RelativeType.Postsynaptic:
+                    return EdgeDirection.Outbound;
+                case RelativeType.Presynaptic:
+                    return EdgeDirection.Inbound;
+                default:
+                    return EdgeDirection.Any;
+            }
+        }
+
+        public async Task<IEnumerable<NeuronResult>> Get(Guid guid, Guid? centralGuid = null, RelativeType type = RelativeType.NotSet, bool shouldLoadTerminals = false, CancellationToken token = default(CancellationToken))
+        {
+            IEnumerable<NeuronResult> result = null;
 
             using (var db = ArangoDatabase.CreateWithSetting(this.settingName))
             {
                 if (!db.ListGraphs().Any(a => a.Id == "_graphs/" + NeuronRepository.GraphName))
                     throw new InvalidOperationException($"Graph '{NeuronRepository.GraphName}' not initialized.");
 
-                result = await db.DocumentAsync<Neuron>(guid.ToString());
-                if (result != null)
+                if (!centralGuid.HasValue)
+                    result = new NeuronResult[] { new NeuronResult(await db.DocumentAsync<Neuron>(guid.ToString())) };                    
+                else
                 {
-                    result.Terminals = await NeuronRepository.GetTerminals(guid.ToString(), db);
-
-                    int c = db.Query()
-                        .Traversal<Neuron, Terminal>(EdgePrefix + guid.ToString())
-                        .Depth(1, 999)
-                        .OutBound()
-                        .Graph(NeuronRepository.GraphName)
-                        .Filter(n => n.Vertex.Id == guid.ToString())
-                        .Select(g => g.Vertex.Id)
-                        .ToList()
-                        .Count();
-                        
-                    if (c > 0)
-                        result.Errors = new string[]
-                        {
-                            "Circular reference detected."
-                        };
+                    var temp = await NeuronRepository.GetNeuronResults(centralGuid.Value, this.settingName, NeuronRepository.ConvertRelativeToDirection(type));
+                    // TODO: optimize by passing this into GetNeuronResults AQL
+                    result = temp.Where(nr => nr.Neuron.Id == guid.ToString() || nr.Terminal.TargetId == guid.ToString());
                 }
+
+                if (shouldLoadTerminals)
+                    foreach(var nr in result)
+                        nr.Neuron.Terminals = (await NeuronRepository.GetTerminals(nr.Neuron.Id, db, EdgeDirection.Outbound)).ToArray();
+
+                // KEEP: circular references will now be allowed 2018/10/24
+                // int c = db.Query()
+                //    .Traversal<Neuron, Terminal>(EdgePrefix + guid.ToString())
+                //    .Depth(1, 999)
+                //    .OutBound()
+                //    .Graph(NeuronRepository.GraphName)
+                //    .Filter(n => n.Vertex.Id == guid.ToString())
+                //    .Select(g => g.Vertex.Id)
+                //    .ToList()
+                //    .Count();
             }
 
             return result;
         }
 
-        private static async Task<Terminal[]> GetTerminals(string id, IArangoDatabase db)
+        private static async Task<IEnumerable<Terminal>> GetTerminals(string id, IArangoDatabase db, EdgeDirection direction)
         {
-            return (await db.EdgesAsync<Terminal>(EdgePrefix + id.ToString(), EdgeDirection.Outbound))
+            return (await db.EdgesAsync<Terminal>(EdgePrefix + id.ToString(), direction))
                 .Select(x => new Terminal(
-                    x.Id,
-                    x.NeuronId.Substring(EdgePrefix.Length),
-                    x.TargetId.Substring(EdgePrefix.Length),
-                    x.Effect,
-                    x.Strength
-                )
-            ).ToArray();
+                        x.Id,
+                        x.NeuronId.Substring(EdgePrefix.Length),
+                        x.TargetId.Substring(EdgePrefix.Length),
+                        x.Effect,
+                        x.Strength
+                    )
+                );
         }
 
-        public async Task<IEnumerable<Neuron>> GetByDataSubstring(string dataSubstring, CancellationToken token = default(CancellationToken))
+        private static async Task<IEnumerable<NeuronResult>> GetNeuronResults(Guid id, string settingName, EdgeDirection direction, string filter = null, int? limit = 1000, CancellationToken token = default(CancellationToken))
         {
-            IEnumerable<Neuron> result = null;
+            IEnumerable<NeuronResult> result = null;
 
-            using (var db = ArangoDatabase.CreateWithSetting(this.settingName))
-            {
-                result = db.Query<Neuron>().Where(n => AQL.Contains(AQL.Upper(n.Data), AQL.Upper(dataSubstring))).ToArray();
-                foreach (var n in result)
-                {
-                    var ts = await NeuronRepository.GetTerminals(n.Id, db);
-                    n.Terminals = ts;
-                }
-            }
-
-            return result;
-        }
-
-        public async Task<IEnumerable<Neuron>> GetByIds(Guid[] ids, CancellationToken token = default(CancellationToken))
-        {
-            IList<Neuron> result = new List<Neuron>();
-
-            // TODO: call graphdb specific functionality instead of this.Get()
-            foreach (var g in ids)
-            {
-                var nv = await this.Get(g, token);
-                result.Add(nv);
-            };
-
-            return result;
-        }
-
-        public async Task<IEnumerable<Dendrite>> GetDendritesById(Guid id, CancellationToken token = default(CancellationToken))
-        {
-            IList<Dendrite> result = null;
-
-            using (var db = ArangoDatabase.CreateWithSetting(this.settingName))
+            using (var db = ArangoDatabase.CreateWithSetting(settingName))
             {
                 var idstr = EdgePrefix + id.ToString();
-                var edges = db.Query<Terminal>().Where(te => idstr == te.TargetId).ToArray();
-                var presynaptics = await this.GetByIds(edges.Select(e => Guid.Parse(e.NeuronId.Substring(EdgePrefix.Length))).ToArray());
-                result = presynaptics.Select(n => new Dendrite() { Id = n.Id, Data = n.Data, Version = n.Version }).ToList();
+                var terminals = await NeuronRepository.GetTerminals(id.ToString(), db, direction);
+                // get ids of presynaptics
+                var neuronIds = direction == EdgeDirection.Inbound ? terminals.Select(t => t.NeuronId) : null;
+                // get ids of postsynaptics
+                var targetIds = direction == EdgeDirection.Outbound ? terminals.Select(t => t.TargetId) : null;
+                var anyButSpecifiedId =
+                    direction == EdgeDirection.Any ?
+                    // get ids of both presynaptics and postsynaptics, exclude ids which refer to specified id
+                    terminals.Select(t => t.NeuronId).Concat(terminals.Select(t => t.TargetId)).Where(i => i != id.ToString()) :
+                    null;
+
+                var neurons = db.Query<Neuron>()
+                    .Where(n =>
+                            (
+                                filter == null || AQL.Contains(AQL.Upper(n.Data), AQL.Upper(filter))
+                            ) &&
+                            (
+                                (direction == EdgeDirection.Any && AQL.In(n.Id, anyButSpecifiedId)) ||
+                                (direction == EdgeDirection.Outbound && AQL.In(n.Id, targetIds)) ||
+                                (direction == EdgeDirection.Inbound && AQL.In(n.Id, neuronIds))
+                            )
+                        )
+                    .ToArray();
+
+                result = from t in terminals
+                         from n in neurons
+                         where n.Id == t.NeuronId || n.Id == t.TargetId
+                         select new NeuronResult(n, t);
+                
+                if (direction != EdgeDirection.Inbound)
+                {
+                    // add terminals which don't have neurons and add as postsynaptics
+                    // get outboundTerminals
+                    var outs = terminals.Select(t => t.TargetId).Where(i => i != id.ToString());
+                    var foundNeuronIds = neurons.Select(n => n.Id);
+                    var abandonedTerminals = outs
+                        .Where(o => !foundNeuronIds.Contains(o))
+                        .Select(s => terminals.First(t => t.TargetId == s));
+
+                    result = result.Concat(abandonedTerminals.Select(t => new NeuronResult(t)));
+                }
+
+                result = result.Take(limit.Value);
             }
 
             return result;
@@ -231,18 +260,25 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
             this.settingName = databaseName;
         }
 
-        public async Task<IEnumerable<Neuron>> GetAll(int? limit = 1000)
+        public async Task<IEnumerable<NeuronResult>> GetAll(Guid? centralGuid = null, RelativeType type = RelativeType.NotSet, string filter = default(string), int? limit = 1000, CancellationToken token = default(CancellationToken))
         {
-            IEnumerable<Neuron> result = null;
+            IEnumerable<NeuronResult> result = null;
 
             using (var db = ArangoDatabase.CreateWithSetting(this.settingName))
             {
-                result = db.All<Neuron>(null, limit).ToList().AsEnumerable();
-                foreach (var n in result)
-                {
-                    var ts = await NeuronRepository.GetTerminals(n.Id, db);
-                    n.Terminals = ts;
-                }
+                if (!centralGuid.HasValue)
+                    result = db.Query<Neuron>()
+                        .Where(n => filter == null || AQL.Contains(AQL.Upper(n.Data), AQL.Upper(filter)))
+                        .ToArray()
+                        .Take(limit.Value)
+                        .Select(n => new NeuronResult(n)).ToArray();
+                else
+                    result = await NeuronRepository.GetNeuronResults(
+                        centralGuid.Value, 
+                        this.settingName, 
+                        NeuronRepository.ConvertRelativeToDirection(type), 
+                        filter, 
+                        limit);
             }
 
             return result;
