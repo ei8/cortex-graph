@@ -72,7 +72,10 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
                 {
                     var temp = await NeuronRepository.GetNeuronResults(centralGuid.Value, this.settingName, NeuronRepository.ConvertRelativeToDirection(type));
                     // TODO: optimize by passing this into GetNeuronResults AQL
-                    result = temp.Where(nr => nr.Neuron.Id == guid.ToString() || nr.Terminal.TargetId == guid.ToString());
+                    result = temp.Where(nr => 
+                        (nr.Neuron != null && nr.Neuron.Id == guid.ToString()) || 
+                        (nr.Terminal != null && nr.Terminal.TargetId == guid.ToString())
+                        );
                 }
 
                 if (shouldLoadTerminals)
