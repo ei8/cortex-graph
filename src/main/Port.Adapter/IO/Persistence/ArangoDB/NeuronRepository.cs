@@ -131,7 +131,7 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
                 var neurons = db.Query<Neuron>()
                     .Where(n =>
                             (
-                                filter == null || AQL.Contains(AQL.Upper(n.Data), AQL.Upper(filter))
+                                filter == null || AQL.Contains(AQL.Upper(n.Tag), AQL.Upper(filter))
                             ) &&
                             (
                                 (direction == EdgeDirection.Any && AQL.In(n.Id, anyButSpecifiedId)) ||
@@ -271,7 +271,7 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
             {
                 if (!centralGuid.HasValue)
                     result = db.Query<Neuron>()
-                        .Where(n => filter == null || AQL.Contains(AQL.Upper(n.Data), AQL.Upper(filter)))
+                        .Where(n => filter == null || AQL.Contains(AQL.Upper(n.Tag), AQL.Upper(filter)))
                         .ToArray()
                         .Take(limit.Value)
                         .Select(n => new NeuronResult(n)).ToArray();

@@ -31,7 +31,7 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Test.EventDataPr
         public abstract class ProcessContext : Context
         {
             protected Guid gettingGuid;
-            protected string initialData;
+            protected string initialTag;
             protected int version;
             protected string timestamp;
 
@@ -39,7 +39,7 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Test.EventDataPr
             {
                 base.Given();
 
-                this.initialData = "Hello World";
+                this.initialTag = "Hello World";
                 this.version = new Random().Next();
                 this.timestamp = DateTimeOffset.Now.ToString("o");
 
@@ -51,14 +51,14 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Test.EventDataPr
 
             protected override void When()
             {
-                Task.Run(() => this.sut.Process(this.repository.Object, this.EventName, this.Data)).Wait();
+                Task.Run(() => this.sut.Process(this.repository.Object, this.EventName, this.Tag)).Wait();
             }
 
             protected abstract Neuron GetNeuron(Guid id);
 
             protected abstract string EventName { get; }
 
-            protected abstract string Data { get; }
+            protected abstract string Tag { get; }
         }
 
         public abstract class SavingContext : ProcessContext
@@ -84,7 +84,7 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Test.EventDataPr
 
                 protected override string EventName => "NeuronCreated";
 
-                protected override string Data => $"{{\"Data\":\"{this.initialData}\",\"Id\":\"{this.guid.ToString()}\",\"Version\":{this.version},\"TimeStamp\":\"{this.timestamp}\"}}";
+                protected override string Tag => $"{{\"Tag\":\"{this.initialTag}\",\"Id\":\"{this.guid.ToString()}\",\"Version\":{this.version},\"TimeStamp\":\"{this.timestamp}\"}}";
             }
 
             public class When_data_is_valid : NeuronCreatedContext
@@ -96,9 +96,9 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Test.EventDataPr
                 }
 
                 [Fact]
-                public void Should_save_data()
+                public void Should_save_tag()
                 {
-                    Assert.StartsWith(this.initialData, this.savingNeuron.Data);
+                    Assert.StartsWith(this.initialTag, this.savingNeuron.Tag);
                 }
 
                 [Fact]
@@ -115,23 +115,23 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Test.EventDataPr
             }
         }
 
-        public class When_data_changed
+        public class When_tag_changed
         {
-            public class DataChangedContext : SavingContext
+            public class TagChangedContext : SavingContext
             {
                 protected override Neuron GetNeuron(Guid id)
                 {
-                    return new Neuron() { Id = id.ToString(), Data = this.initialData };
+                    return new Neuron() { Id = id.ToString(), Tag = this.initialTag };
                 }
 
-                protected const string NewData = "A whole new world";
+                protected const string NewTag = "A whole new world";
 
-                protected override string EventName => "NeuronDataChanged";
+                protected override string EventName => "NeuronTagChanged";
 
-                protected override string Data => $"{{\"Data\":\"{DataChangedContext.NewData}\",\"Id\":\"{this.guid.ToString()}\",\"Version\":{this.version},\"TimeStamp\":\"{this.timestamp}\"}}";
+                protected override string Tag => $"{{\"Tag\":\"{TagChangedContext.NewTag}\",\"Id\":\"{this.guid.ToString()}\",\"Version\":{this.version},\"TimeStamp\":\"{this.timestamp}\"}}";
             }
 
-            public class When_data_is_valid : DataChangedContext
+            public class When_data_is_valid : TagChangedContext
             {
                 [Fact]
                 public void Should_get_correct_guid()
@@ -146,9 +146,9 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Test.EventDataPr
                 }
 
                 [Fact]
-                public void Should_save_new_data()
+                public void Should_save_new_tag()
                 {
-                    Assert.StartsWith(DataChangedContext.NewData, this.savingNeuron.Data);
+                    Assert.StartsWith(TagChangedContext.NewTag, this.savingNeuron.Tag);
                 }
 
                 [Fact]
@@ -177,13 +177,13 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Test.EventDataPr
                     return new Neuron()
                     {
                         Id = id.ToString(),
-                        Data = this.initialData
+                        Tag = this.initialTag
                     };
                 }
 
                 protected override string EventName => "TerminalsAdded";
 
-                protected override string Data => @"{
+                protected override string Tag => @"{
   ""Terminals"": [
     {
       ""TargetId"": """ + this.terminal1Id + @""",
@@ -260,7 +260,7 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Test.EventDataPr
                     return new Neuron()
                     {
                         Id = id.ToString(),
-                        Data = this.initialData,
+                        Tag = this.initialTag,
                         Terminals = new Terminal[]
                         {
                             new Terminal(Guid.NewGuid().ToString(), id.ToString(), this.terminal1Id, NeurotransmitterEffect.Excite, 1),
@@ -271,7 +271,7 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Test.EventDataPr
 
                 protected override string EventName => "TerminalsRemoved";
 
-                protected override string Data => @"{
+                protected override string Tag => @"{
   ""TargetIds"": [
     """ + this.terminal1Id + @"""
   ],
@@ -347,7 +347,7 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Test.EventDataPr
                     return new Neuron()
                     {
                         Id = id.ToString(),
-                        Data = this.initialData,
+                        Tag = this.initialTag,
                         Terminals = new Terminal[]
                         {
                                 new Terminal(Guid.NewGuid().ToString(), id.ToString(), this.terminalId, NeurotransmitterEffect.Excite, 1),
@@ -357,7 +357,7 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Test.EventDataPr
 
                 protected override string EventName => "NeuronDeactivated";
 
-                protected override string Data => @"{
+                protected override string Tag => @"{
   ""Id"": """ + this.guid.ToString() + @""",
   ""Version"": 4,
   ""TimeStamp"": ""2017-12-02T12:55:46.408498+00:00""

@@ -12,7 +12,7 @@ namespace works.ei8.Cortex.Graph.Application.Data
 
         public string CentralId { get; set; }
 
-        public string Data { get; set; }
+        public string Tag { get; set; }
 
         public RelativeType Type { get; set; }
 

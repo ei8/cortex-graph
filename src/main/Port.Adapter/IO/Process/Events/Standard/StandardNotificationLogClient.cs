@@ -68,7 +68,8 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Standard
                 {
                     await Task.Delay(this.pollInterval);
                     StandardNotificationLogClient.logger.Info($"[Avatar: {this.avatarId}] Polling subscription update...");
-                    await StandardNotificationLogClient.UpdateGraph(this.avatarId, (await this.settingsRepository.Get(Guid.Empty)).LastPosition, this.neuronRepository, this.settingsRepository);
+                    var s = await this.settingsRepository.Get(Guid.Empty);
+                    await StandardNotificationLogClient.UpdateGraph(this.avatarId, s == null ? "0" : s.LastPosition, this.neuronRepository, this.settingsRepository);
                 }
             }
         }

@@ -22,7 +22,7 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events
                     n = new Neuron()
                     {
                         Id = JsonHelper.GetRequiredValue<string>(jd, "Id"),
-                        Data = JsonHelper.GetRequiredValue<string>(jd, "Data"),
+                        Tag = JsonHelper.GetRequiredValue<string>(jd, "Tag"),
                         Version = JsonHelper.GetRequiredValue<int>(jd, "Version"),
                         Timestamp = JsonHelper.GetRequiredValue<string>(jd, "TimeStamp"),
                     };
@@ -52,11 +52,11 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events
                     await repository.Save(n);
                     result = true;
                     break;
-                case "NeuronDataChanged":
+                case "NeuronTagChanged":
                     n = await repository.Get(Guid.Parse(
                         JsonHelper.GetRequiredValue<string>(jd, "Id")
                         ));
-                    n.Data = JsonHelper.GetRequiredValue<string>(jd, "Data");
+                    n.Tag = JsonHelper.GetRequiredValue<string>(jd, "Tag");
                     n.Version = JsonHelper.GetRequiredValue<int>(jd, "Version");
                     n.Timestamp = JsonHelper.GetRequiredValue<string>(jd, "TimeStamp");
                     await repository.Save(n);

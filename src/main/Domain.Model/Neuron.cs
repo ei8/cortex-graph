@@ -16,7 +16,7 @@ namespace works.ei8.Cortex.Graph.Domain.Model
         [DocumentProperty(Identifier = IdentifierType.Key)]
         public string Id { get; set; }
 
-        public string Data { get; set; }
+        public string Tag { get; set; }
 
         public string Timestamp { get; set; }
 

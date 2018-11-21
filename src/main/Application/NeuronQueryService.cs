@@ -66,7 +66,7 @@ namespace works.ei8.Cortex.Graph.Application
                 if (nv.Neuron != null)
                 {
                     result.Id = nv.Neuron.Id;
-                    result.Data = nv.Neuron.Data;
+                    result.Tag = nv.Neuron.Tag;
                     result.Timestamp = nv.Neuron.Timestamp;
                     result.Version = nv.Neuron.Version;
                 }
@@ -79,7 +79,7 @@ namespace works.ei8.Cortex.Graph.Application
                     {
                         // If terminal is set but neuron is not set, terminal is targetting a deactivated neuron
                         result.Type = Data.RelativeType.Postsynaptic;
-                        result.Data = "[Not found]";
+                        result.Tag = "[Not found]";
                         result.Id = nv.Terminal.TargetId;
                         result.Errors = new string[] { $"Unable to find Neuron with ID '{nv.Terminal.TargetId}'" };
                     }
@@ -90,7 +90,7 @@ namespace works.ei8.Cortex.Graph.Application
             }
             catch (Exception ex)
             {
-                throw new ArgumentException($"An exception occurred while converting Neuron '{nv.Neuron.Data}' (Id:{nv.Neuron.Id}). Details:\n{ex.Message}", ex);
+                throw new ArgumentException($"An exception occurred while converting Neuron '{nv.Neuron.Tag}' (Id:{nv.Neuron.Id}). Details:\n{ex.Message}", ex);
             }
             return result;
         }
