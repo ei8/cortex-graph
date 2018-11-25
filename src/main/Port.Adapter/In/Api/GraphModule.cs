@@ -12,14 +12,14 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.In.Api
 
         public GraphModule(ICommandSender commandSender) : base("/{avatarId}/cortex/graph")
         {
-            this.Post("/regenerate", (parameters) =>
+            this.Post("/regenerate", async (parameters) =>
             {
                 Response result = null;
 
                 try
                 {
                     var command = new Regenerate(parameters.avatarId);
-                    commandSender.Send(command);
+                    await commandSender.Send(command);
                     result = new Response { StatusCode = HttpStatusCode.OK };
                 }
                 catch (Exception ex)
@@ -31,14 +31,14 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.In.Api
             }
             );
 
-            this.Post("/resumegeneration", (parameters) =>
+            this.Post("/resumegeneration", async (parameters) =>
             {
                 Response result = null;
 
                 try
                 {
                     var command = new ResumeGeneration(parameters.avatarId);
-                    commandSender.Send(command);
+                    await commandSender.Send(command);
                     result = new Response { StatusCode = HttpStatusCode.OK };
                 }
                 catch (Exception ex)
