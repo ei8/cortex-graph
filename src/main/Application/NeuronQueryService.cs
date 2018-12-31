@@ -18,14 +18,14 @@ namespace works.ei8.Cortex.Graph.Application
             this.neuronRepository = neuronRepository;
         }
 
-        public async Task<IEnumerable<NeuronData>> GetNeurons(string avatarId, string centralId = default(string), Data.RelativeType type = Data.RelativeType.NotSet, string filter = default(string), 
+        public async Task<IEnumerable<NeuronData>> GetNeurons(string avatarId, string centralId = default(string), Data.RelativeType type = Data.RelativeType.NotSet, NeuronQuery neuronQuery = null, 
             int? limit = 1000, CancellationToken token = default(CancellationToken))
         {
             await this.neuronRepository.Initialize(avatarId);
             return (await this.neuronRepository.GetAll(
                     NeuronQueryService.GetNullableStringGuid(centralId), 
                     NeuronQueryService.GetRelativeDomainModel(type), 
-                    filter, 
+                    neuronQuery, 
                     limit)
                     )
                 .Select((n) => (this.ConvertNeuronToData(n, centralId)));
@@ -63,7 +63,7 @@ namespace works.ei8.Cortex.Graph.Application
                     CentralId = centralId
                 };
 
-                if (nv.Neuron != null)
+                if (nv.Neuron.Id != null)
                 {
                     result.Id = nv.Neuron.Id;
                     result.Tag = nv.Neuron.Tag;
@@ -71,10 +71,10 @@ namespace works.ei8.Cortex.Graph.Application
                     result.Version = nv.Neuron.Version;
                 }
                 
-                if (nv.Terminal != null)
+                if (nv.Terminal.Id != null)
                 {
-                    if (nv.Neuron != null)
-                        result.Type = nv.Neuron.Id == nv.Terminal.NeuronId ? Data.RelativeType.Presynaptic : Data.RelativeType.Postsynaptic;
+                    if (nv.Neuron.Id != null)
+                        result.Type = nv.Terminal.NeuronId.EndsWith(nv.Neuron.Id) ? Data.RelativeType.Presynaptic : Data.RelativeType.Postsynaptic;
                     else
                     {
                         // If terminal is set but neuron is not set, terminal is targetting a deactivated neuron

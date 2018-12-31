@@ -3,7 +3,9 @@ using Nancy.Responses;
 using Nancy.Security;
 using Newtonsoft.Json;
 using System;
+using System.Collections.Generic;
 using works.ei8.Cortex.Graph.Application;
+using works.ei8.Cortex.Graph.Domain.Model;
 
 namespace works.ei8.Cortex.Graph.Port.Adapter.Out.Api
 {
@@ -19,9 +21,8 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.Out.Api
             this.Get("/neurons", async (parameters) =>
             {
                 var limit = this.Request.Query["limit"].HasValue ? this.Request.Query["limit"].ToString() : GraphModule.DefaultLimit;
-                var filter = this.Request.Query["filter"].HasValue ? this.Request.Query["filter"].ToString() : null;
 
-                var nv = await queryService.GetNeurons(parameters.avatarId, filter:filter, limit: int.Parse(limit));
+                var nv = await queryService.GetNeurons(parameters.avatarId, neuronQuery: GraphModule.ExtractQuery(this.Request.Query), limit: int.Parse(limit));
                 return new TextResponse(JsonConvert.SerializeObject(nv));
             }
             );
@@ -35,15 +36,14 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.Out.Api
 
             this.Get("/neurons/{centralid:guid}/relatives", async (parameters) =>
             {
-                var type = this.Request.Query["type"].HasValue ? this.Request.Query["type"].ToString() : GraphModule.DefaultType;
-                var filter = this.Request.Query["filter"].HasValue ? this.Request.Query["filter"].ToString() : null;
+                var type =  this.Request.Query["type"].HasValue ? this.Request.Query["type"].ToString() : GraphModule.DefaultType;
                 var limit = this.Request.Query["limit"].HasValue ? this.Request.Query["limit"].ToString() : GraphModule.DefaultLimit;
 
                 var nv = await queryService.GetNeurons(
                     parameters.avatarId, 
                     parameters.centralid, 
                     Enum.Parse(typeof(Application.Data.RelativeType), type),
-                    filter,
+                    GraphModule.ExtractQuery(this.Request.Query),
                     int.Parse(limit)
                     );
                 return new TextResponse(JsonConvert.SerializeObject(nv));
@@ -63,6 +63,28 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.Out.Api
                 return new TextResponse(JsonConvert.SerializeObject(nv));
             }
             );
+        }
+
+        private static NeuronQuery ExtractQuery(dynamic query)
+        {
+            var nq = new NeuronQuery();
+            nq.TagContains = GraphModule.GetQueryArrayOrDefault(query, nameof(NeuronQuery.TagContains));
+            nq.TagContainsNot = GraphModule.GetQueryArrayOrDefault(query, nameof(NeuronQuery.TagContainsNot));
+            nq.Postsynaptic = GraphModule.GetQueryArrayOrDefault(query, nameof(NeuronQuery.Postsynaptic));
+            nq.PostsynapticNot = GraphModule.GetQueryArrayOrDefault(query, nameof(NeuronQuery.PostsynapticNot));
+            nq.Presynaptic = GraphModule.GetQueryArrayOrDefault(query, nameof(NeuronQuery.Presynaptic));
+            nq.PresynapticNot = GraphModule.GetQueryArrayOrDefault(query, nameof(NeuronQuery.PresynapticNot));
+            return nq;
+        }
+
+        private static IEnumerable<string> GetQueryArrayOrDefault(dynamic query, string parameterName)
+        {
+            var parameterNameExclamation = parameterName.Replace("Not", "!");
+            return query[parameterName].HasValue ? 
+                query[parameterName].ToString().Split(",") : 
+                    query[parameterNameExclamation].HasValue ?
+                    query[parameterNameExclamation].ToString().Split(",") :
+                    null;
         }
     }
 }

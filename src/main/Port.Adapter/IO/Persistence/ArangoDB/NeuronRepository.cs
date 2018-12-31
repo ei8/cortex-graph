@@ -3,6 +3,7 @@ using ArangoDB.Client.Data;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using works.ei8.Cortex.Graph.Domain.Model;
@@ -12,6 +13,7 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
     public class NeuronRepository : INeuronRepository
     {
         private const string GraphName = "Graph";
+        private const string InitialQueryFilters = "FILTER ";
         private const string EdgePrefix = nameof(Neuron) + "/";
         private string settingName;
 
@@ -67,10 +69,10 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
                     throw new InvalidOperationException($"Graph '{NeuronRepository.GraphName}' not initialized.");
 
                 if (!centralGuid.HasValue)
-                    result = new NeuronResult[] { new NeuronResult(await db.DocumentAsync<Neuron>(guid.ToString())) };                    
+                    result = new NeuronResult[] { new NeuronResult() { Neuron = await db.DocumentAsync<Neuron>(guid.ToString()) } };
                 else
                 {
-                    var temp = await NeuronRepository.GetNeuronResults(centralGuid.Value, this.settingName, NeuronRepository.ConvertRelativeToDirection(type));
+                    var temp = NeuronRepository.GetNeuronResults(centralGuid.Value, this.settingName, NeuronRepository.ConvertRelativeToDirection(type));
                     // TODO: optimize by passing this into GetNeuronResults AQL
                     result = temp.Where(nr => 
                         (nr.Neuron != null && nr.Neuron.Id == guid.ToString()) || 
@@ -97,6 +99,7 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
             return result;
         }
 
+        // DEL: should integrate with main neuron query
         private static async Task<IEnumerable<Terminal>> GetTerminals(string id, IArangoDatabase db, EdgeDirection direction)
         {
             return (await db.EdgesAsync<Terminal>(EdgePrefix + id.ToString(), direction))
@@ -110,56 +113,17 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
                 );
         }
 
-        private static async Task<IEnumerable<NeuronResult>> GetNeuronResults(Guid id, string settingName, EdgeDirection direction, string filter = null, int? limit = 1000, CancellationToken token = default(CancellationToken))
+        private static IEnumerable<NeuronResult> GetNeuronResults(Guid? centralGuid, string settingName, EdgeDirection direction, NeuronQuery neuronQuery = null, int? limit = 1000, CancellationToken token = default(CancellationToken))
         {
             IEnumerable<NeuronResult> result = null;
-
+            
             using (var db = ArangoDatabase.CreateWithSetting(settingName))
-            {
-                var idstr = EdgePrefix + id.ToString();
-                var terminals = await NeuronRepository.GetTerminals(id.ToString(), db, direction);
-                // get ids of presynaptics
-                var neuronIds = direction == EdgeDirection.Inbound ? terminals.Select(t => t.NeuronId) : null;
-                // get ids of postsynaptics
-                var targetIds = direction == EdgeDirection.Outbound ? terminals.Select(t => t.TargetId) : null;
-                var anyButSpecifiedId =
-                    direction == EdgeDirection.Any ?
-                    // get ids of both presynaptics and postsynaptics, exclude ids which refer to specified id
-                    terminals.Select(t => t.NeuronId).Concat(terminals.Select(t => t.TargetId)).Where(i => i != id.ToString()) :
-                    null;
+            {                
+                var queryString = NeuronRepository.CreateQuery(centralGuid, direction, neuronQuery, limit, out List<QueryParameter> queryParameters);
 
-                var neurons = db.Query<Neuron>()
-                    .Where(n =>
-                            (
-                                filter == null || AQL.Contains(AQL.Upper(n.Tag), AQL.Upper(filter))
-                            ) &&
-                            (
-                                (direction == EdgeDirection.Any && AQL.In(n.Id, anyButSpecifiedId)) ||
-                                (direction == EdgeDirection.Outbound && AQL.In(n.Id, targetIds)) ||
-                                (direction == EdgeDirection.Inbound && AQL.In(n.Id, neuronIds))
-                            )
-                        )
-                    .ToArray();
-
-                result = from t in terminals
-                         from n in neurons
-                         where n.Id == t.NeuronId || n.Id == t.TargetId
-                         select new NeuronResult(n, t);
-                
-                if (direction != EdgeDirection.Inbound)
-                {
-                    // add terminals which don't have neurons and add as postsynaptics
-                    // get outboundTerminals
-                    var outs = terminals.Select(t => t.TargetId).Where(i => i != id.ToString());
-                    var foundNeuronIds = neurons.Select(n => n.Id);
-                    var abandonedTerminals = outs
-                        .Where(o => !foundNeuronIds.Contains(o))
-                        .Select(s => terminals.First(t => t.TargetId == s));
-
-                    result = result.Concat(abandonedTerminals.Select(t => new NeuronResult(t)));
-                }
-
-                result = result.Take(limit.Value);
+                result = db.CreateStatement<NeuronResult>(queryString, queryParameters)
+                            .AsEnumerable()
+                            .ToArray();
             }
 
             return result;
@@ -258,33 +222,169 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
         }
 
         public async Task Initialize(string databaseName)
-        {
-            await Helper.CreateDatabase(databaseName);
+        {            await Helper.CreateDatabase(databaseName);
             this.settingName = databaseName;
         }
 
-        public async Task<IEnumerable<NeuronResult>> GetAll(Guid? centralGuid = null, RelativeType type = RelativeType.NotSet, string filter = default(string), int? limit = 1000, CancellationToken token = default(CancellationToken))
+        public async Task<IEnumerable<NeuronResult>> GetAll(Guid? centralGuid = null, RelativeType type = RelativeType.NotSet, NeuronQuery neuronQuery = null, int? limit = 1000, CancellationToken token = default(CancellationToken))
         {
             IEnumerable<NeuronResult> result = null;
 
-            using (var db = ArangoDatabase.CreateWithSetting(this.settingName))
-            {
-                if (!centralGuid.HasValue)
-                    result = db.Query<Neuron>()
-                        .Where(n => filter == null || AQL.Contains(AQL.Upper(n.Tag), AQL.Upper(filter)))
-                        .ToArray()
-                        .Take(limit.Value)
-                        .Select(n => new NeuronResult(n)).ToArray();
-                else
-                    result = await NeuronRepository.GetNeuronResults(
-                        centralGuid.Value, 
-                        this.settingName, 
-                        NeuronRepository.ConvertRelativeToDirection(type), 
-                        filter, 
-                        limit);
-            }
+            result = NeuronRepository.GetNeuronResults(
+                centralGuid,
+                this.settingName,
+                NeuronRepository.ConvertRelativeToDirection(type),
+                neuronQuery,
+                limit);
 
             return result;
+        }
+
+        private static string CreateQuery(Guid? centralGuid, EdgeDirection direction, NeuronQuery neuronQuery, int? limit, out List<QueryParameter> queryParameters)
+        {
+            queryParameters = new List<QueryParameter>();
+            var queryFiltersBuilder = new StringBuilder();
+            var queryStringBuilder = new StringBuilder();
+
+            // TagContains
+            NeuronRepository.ExtractContainsFilters(neuronQuery.TagContains, nameof(NeuronQuery.TagContains), queryParameters, queryFiltersBuilder, "&&");
+
+            // TagContainsNot
+            NeuronRepository.ExtractContainsFilters(neuronQuery.TagContainsNot, nameof(NeuronQuery.TagContainsNot), queryParameters, queryFiltersBuilder, "||", "NOT");
+
+            if (!centralGuid.HasValue)
+            {
+                queryStringBuilder.Append($@"
+                    FOR n IN Neuron
+                        {queryFiltersBuilder}
+                            RETURN {{ Neuron: n, Terminal: {{}} }}");
+            }
+            else
+            {
+                // presynaptics
+                string letPre = direction == EdgeDirection.Outbound ? string.Empty : @"LET presynaptics = (
+                            FOR presynaptic IN Neuron
+                            FILTER presynaptic._id == t._from
+                            return presynaptic
+                        )";
+                string inPre = direction == EdgeDirection.Outbound ? string.Empty : $@"t._to == @{nameof(centralGuid)} && LENGTH(presynaptics) > 0 ?
+                                    presynaptics :";
+                string filterPre = direction == EdgeDirection.Outbound ? string.Empty : $@"t._to == @{nameof(centralGuid)}";
+
+                // postsynaptics
+                string letPost = direction == EdgeDirection.Inbound ? string.Empty : @"LET postsynaptics = (
+                            FOR postsynaptic IN Neuron
+                            FILTER postsynaptic._id == t._to
+                            return postsynaptic
+                        )";
+                string inPost = direction == EdgeDirection.Inbound ? string.Empty : $@"t._from == @{nameof(centralGuid)} && LENGTH(postsynaptics) > 0 ? 
+                                postsynaptics :";
+                string filterPost = direction == EdgeDirection.Inbound ? string.Empty : $@"t._from == @{nameof(centralGuid)}";
+
+                queryStringBuilder.Append($@"
+                    FOR t in Terminal 
+                        {letPost}
+                        {letPre}
+                        FOR n IN (
+                            {inPost}
+                                {inPre}
+                                    [ {{ }} ]
+                            )
+                        // x
+                        FILTER {filterPost} {(!string.IsNullOrEmpty(filterPost) && !string.IsNullOrEmpty(filterPre) ? "||" : string.Empty)} {filterPre}
+                        {queryFiltersBuilder}
+                            RETURN {{ Neuron: n, Terminal: t }}");
+                queryParameters.Add(new QueryParameter() { Name = nameof(centralGuid), Value = $"Neuron/{centralGuid.Value.ToString()}" });
+            }
+
+            // Postsynaptic
+            NeuronRepository.ExtractSynapticFilters(neuronQuery.Postsynaptic, nameof(NeuronQuery.Postsynaptic), queryParameters, queryStringBuilder);
+
+            // PostsynapticNot
+            NeuronRepository.ExtractSynapticFilters(neuronQuery.PostsynapticNot, nameof(NeuronQuery.PostsynapticNot), queryParameters, queryStringBuilder, false);
+
+            // Presynaptic
+            NeuronRepository.ExtractSynapticFilters(neuronQuery.Presynaptic, nameof(NeuronQuery.Presynaptic), queryParameters, queryStringBuilder);
+
+            // PresynapticNot
+            NeuronRepository.ExtractSynapticFilters(neuronQuery.PresynapticNot, nameof(NeuronQuery.PresynapticNot), queryParameters, queryStringBuilder, false);
+
+            // Sort and Limit
+            var lastReturnIndex = queryStringBuilder.ToString().ToUpper().LastIndexOf("RETURN");
+            queryStringBuilder.Remove(lastReturnIndex, 6);
+            queryStringBuilder.Insert(lastReturnIndex, !centralGuid.HasValue ? "SORT n.Tag LIMIT @limit RETURN" : "SORT n.Neuron.Tag LIMIT @limit RETURN");
+            queryParameters.Add(new QueryParameter() { Name = "limit", Value = limit });
+
+            return queryStringBuilder.ToString();
+        }
+
+        private static void ExtractSynapticFilters(IEnumerable<string> synapticsField, string synapticsFieldName, List<QueryParameter> queryParameters, StringBuilder queryStringBuilder, bool include = true)
+        {
+            if (synapticsField != null)
+            {
+                var synapticList = synapticsField.ToList();
+                synapticList.ForEach(s =>
+                    NeuronRepository.WrapQueryString(s, queryStringBuilder, synapticsFieldName, (synapticList.IndexOf(s) + 1), include)
+                    );
+                queryParameters.AddRange(synapticsField.Select(s =>
+                    new QueryParameter()
+                    {
+                        Name = synapticsFieldName + (synapticList.IndexOf(s) + 1),
+                        Value = $"Neuron/{s}"
+                    }
+                ));
+            }
+        }
+
+        private static void ExtractContainsFilters(IEnumerable<string> containsField, string filtersFieldName, List<QueryParameter> queryParameters, StringBuilder queryFiltersBuilder, string filterJoiner, string logicWrapper = "")
+        {
+            if (containsField != null)
+            {
+                if (queryFiltersBuilder.Length == 0)
+                    queryFiltersBuilder.Append(NeuronRepository.InitialQueryFilters);
+                if (queryFiltersBuilder.Length > NeuronRepository.InitialQueryFilters.Length)
+                    queryFiltersBuilder.Append(" && ");
+
+                var containsList = containsField.ToList();
+                queryParameters.AddRange(containsField.Select(s =>
+                    new QueryParameter()
+                    {
+                        Name = filtersFieldName + (containsList.IndexOf(s) + 1),
+                        Value = $"%{s}%"
+                    }
+                ));
+                var filters = containsField.Select(f => $"Upper(n.Tag) LIKE Upper(@{filtersFieldName + (containsList.IndexOf(f) + 1)})");
+                queryFiltersBuilder.Append($"{logicWrapper}({string.Join($" {filterJoiner} ", filters)})");
+            }
+        }
+
+        private static void WrapQueryString(string s, StringBuilder queryStringBuilder, string fieldName, int index, bool contains)
+        {
+            string filter1 = string.Empty, 
+                filter2 = string.Empty;
+            switch (fieldName)
+            {
+                case nameof(NeuronQuery.Postsynaptic):
+                case nameof(NeuronQuery.PostsynapticNot):
+                    filter1 = "to";
+                    filter2 = "from";
+                    break;
+                case nameof(NeuronQuery.Presynaptic):
+                case nameof(NeuronQuery.PresynapticNot):
+                    filter1 = "from";
+                    filter2 = "to";
+                    break;
+            }
+
+            queryStringBuilder.Insert(0, "FOR n IN(");
+            queryStringBuilder.Append($@")
+LET terminalList = (
+    FOR t IN Terminal
+    FILTER t._{filter1} == @{fieldName + index} && n.Neuron._id == t._{filter2}
+    RETURN 1
+)
+FILTER LENGTH(terminalList) == {(contains ? "1" : "0")}  
+    RETURN n");
         }
     }
 }
