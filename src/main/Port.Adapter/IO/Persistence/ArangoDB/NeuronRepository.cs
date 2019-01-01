@@ -80,6 +80,7 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
                         );
                 }
 
+                // load terminals for the write model
                 if (shouldLoadTerminals)
                     foreach(var nr in result)
                         nr.Neuron.Terminals = (await NeuronRepository.GetTerminals(nr.Neuron.Id, db, EdgeDirection.Outbound)).ToArray();
@@ -247,10 +248,10 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
             var queryStringBuilder = new StringBuilder();
 
             // TagContains
-            NeuronRepository.ExtractContainsFilters(neuronQuery.TagContains, nameof(NeuronQuery.TagContains), queryParameters, queryFiltersBuilder, "&&");
+            NeuronRepository.ExtractContainsFilters(neuronQuery?.TagContains, nameof(NeuronQuery.TagContains), queryParameters, queryFiltersBuilder, "&&");
 
             // TagContainsNot
-            NeuronRepository.ExtractContainsFilters(neuronQuery.TagContainsNot, nameof(NeuronQuery.TagContainsNot), queryParameters, queryFiltersBuilder, "||", "NOT");
+            NeuronRepository.ExtractContainsFilters(neuronQuery?.TagContainsNot, nameof(NeuronQuery.TagContainsNot), queryParameters, queryFiltersBuilder, "||", "NOT");
 
             if (!centralGuid.HasValue)
             {
@@ -298,16 +299,16 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
             }
 
             // Postsynaptic
-            NeuronRepository.ExtractSynapticFilters(neuronQuery.Postsynaptic, nameof(NeuronQuery.Postsynaptic), queryParameters, queryStringBuilder);
+            NeuronRepository.ExtractSynapticFilters(neuronQuery?.Postsynaptic, nameof(NeuronQuery.Postsynaptic), queryParameters, queryStringBuilder);
 
             // PostsynapticNot
-            NeuronRepository.ExtractSynapticFilters(neuronQuery.PostsynapticNot, nameof(NeuronQuery.PostsynapticNot), queryParameters, queryStringBuilder, false);
+            NeuronRepository.ExtractSynapticFilters(neuronQuery?.PostsynapticNot, nameof(NeuronQuery.PostsynapticNot), queryParameters, queryStringBuilder, false);
 
             // Presynaptic
-            NeuronRepository.ExtractSynapticFilters(neuronQuery.Presynaptic, nameof(NeuronQuery.Presynaptic), queryParameters, queryStringBuilder);
+            NeuronRepository.ExtractSynapticFilters(neuronQuery?.Presynaptic, nameof(NeuronQuery.Presynaptic), queryParameters, queryStringBuilder);
 
             // PresynapticNot
-            NeuronRepository.ExtractSynapticFilters(neuronQuery.PresynapticNot, nameof(NeuronQuery.PresynapticNot), queryParameters, queryStringBuilder, false);
+            NeuronRepository.ExtractSynapticFilters(neuronQuery?.PresynapticNot, nameof(NeuronQuery.PresynapticNot), queryParameters, queryStringBuilder, false);
 
             // Sort and Limit
             var lastReturnIndex = queryStringBuilder.ToString().ToUpper().LastIndexOf("RETURN");

@@ -58,34 +58,37 @@ namespace works.ei8.Cortex.Graph.Application
 
             try
             {
-                result = new NeuronData
+                if (nv.Neuron != null || nv.Terminal != null)
                 {
-                    CentralId = centralId
-                };
-
-                if (nv.Neuron.Id != null)
-                {
-                    result.Id = nv.Neuron.Id;
-                    result.Tag = nv.Neuron.Tag;
-                    result.Timestamp = nv.Neuron.Timestamp;
-                    result.Version = nv.Neuron.Version;
-                }
-                
-                if (nv.Terminal.Id != null)
-                {
-                    if (nv.Neuron.Id != null)
-                        result.Type = nv.Terminal.NeuronId.EndsWith(nv.Neuron.Id) ? Data.RelativeType.Presynaptic : Data.RelativeType.Postsynaptic;
-                    else
+                    result = new NeuronData
                     {
-                        // If terminal is set but neuron is not set, terminal is targetting a deactivated neuron
-                        result.Type = Data.RelativeType.Postsynaptic;
-                        result.Tag = "[Not found]";
-                        result.Id = nv.Terminal.TargetId;
-                        result.Errors = new string[] { $"Unable to find Neuron with ID '{nv.Terminal.TargetId}'" };
+                        CentralId = centralId
+                    };
+
+                    if (nv.Neuron?.Id != null)
+                    {
+                        result.Id = nv.Neuron.Id;
+                        result.Tag = nv.Neuron.Tag;
+                        result.Timestamp = nv.Neuron.Timestamp;
+                        result.Version = nv.Neuron.Version;
                     }
 
-                    result.Effect = ((int) nv.Terminal.Effect).ToString();
-                    result.Strength = nv.Terminal.Strength.ToString();
+                    if (nv.Terminal?.Id != null)
+                    {
+                        if (nv.Neuron?.Id != null)
+                            result.Type = nv.Terminal.NeuronId.EndsWith(nv.Neuron.Id) ? Data.RelativeType.Presynaptic : Data.RelativeType.Postsynaptic;
+                        else
+                        {
+                            // If terminal is set but neuron is not set, terminal is targetting a deactivated neuron
+                            result.Type = Data.RelativeType.Postsynaptic;
+                            result.Tag = "[Not found]";
+                            result.Id = nv.Terminal.TargetId;
+                            result.Errors = new string[] { $"Unable to find Neuron with ID '{nv.Terminal.TargetId}'" };
+                        }
+
+                        result.Effect = ((int)nv.Terminal.Effect).ToString();
+                        result.Strength = nv.Terminal.Strength.ToString();
+                    }
                 }
             }
             catch (Exception ex)
