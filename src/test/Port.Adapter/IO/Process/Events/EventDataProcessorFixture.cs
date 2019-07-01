@@ -14,6 +14,7 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Test.EventDataPr
     public abstract class Context : TestContext<EventDataProcessor>
     {
         protected Mock<IRepository<Neuron>> repository;
+        protected Mock<IRepository<Terminal>> terminalRepository;
         protected Guid guid;
 
         protected override void Given()
@@ -21,6 +22,7 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Test.EventDataPr
             base.Given();
 
             this.repository = new Mock<IRepository<Neuron>>();
+            this.terminalRepository = new Mock<IRepository<Terminal>>();
             this.sut = new EventDataProcessor();
             this.guid = Guid.NewGuid();
         }
@@ -31,6 +33,7 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Test.EventDataPr
         public abstract class ProcessContext : Context
         {
             protected Guid gettingGuid;
+            protected Guid gettingTerminalGuid;
             protected string initialTag;
             protected int version;
             protected string timestamp;
@@ -47,23 +50,32 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Test.EventDataPr
                     .Setup(e => e.Get(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
                     .Callback<Guid, CancellationToken>((g, c) => this.gettingGuid = g)
                     .Returns<Guid, CancellationToken>((g, c) => Task.FromResult(this.GetNeuron(g)));
+
+                this.terminalRepository
+                    .Setup(e => e.Get(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+                    .Callback<Guid, CancellationToken>((g, c) => this.gettingTerminalGuid = g)
+                    .Returns<Guid, CancellationToken>((g, c) => Task.FromResult(this.GetTerminal(g)));
             }
 
             protected override void When()
             {
-                Task.Run(() => this.sut.Process(this.repository.Object, this.EventName, this.Tag)).Wait();
+                Task.Run(() => this.sut.Process(this.repository.Object, this.terminalRepository.Object, this.EventName, this.Data)).Wait();
             }
 
             protected abstract Neuron GetNeuron(Guid id);
 
+            protected abstract Terminal GetTerminal(Guid id);
+
             protected abstract string EventName { get; }
 
-            protected abstract string Tag { get; }
+            protected abstract string Data { get; }
         }
 
         public abstract class SavingContext : ProcessContext
         {
             protected Neuron savingNeuron;
+
+            protected Terminal savingTerminal;
 
             protected override void Given()
             {
@@ -73,6 +85,11 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Test.EventDataPr
                     .Setup(e => e.Save(It.IsAny<Neuron>(), It.IsAny<CancellationToken>()))
                     .Callback<Neuron, CancellationToken>((n, c) => this.savingNeuron = n)
                     .Returns<Neuron, CancellationToken>((n, c) => Task.CompletedTask);
+
+                this.terminalRepository
+                    .Setup(e => e.Save(It.IsAny<Terminal>(), It.IsAny<CancellationToken>()))
+                    .Callback<Terminal, CancellationToken>((n, c) => this.savingTerminal = n)
+                    .Returns<Terminal, CancellationToken>((n, c) => Task.CompletedTask);
             }
         }
 
@@ -82,9 +99,11 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Test.EventDataPr
             {
                 protected override Neuron GetNeuron(Guid id) => null;
 
+                protected override Terminal GetTerminal(Guid id) => null;
+
                 protected override string EventName => "NeuronCreated";
 
-                protected override string Tag => $"{{\"Tag\":\"{this.initialTag}\",\"Id\":\"{this.guid.ToString()}\",\"Version\":{this.version},\"TimeStamp\":\"{this.timestamp}\"}}";
+                protected override string Data => $"{{\"Tag\":\"{this.initialTag}\",\"Id\":\"{this.guid.ToString()}\",\"Version\":{this.version},\"Timestamp\":\"{this.timestamp}\"}}";
             }
 
             public class When_data_is_valid : NeuronCreatedContext
@@ -96,7 +115,7 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Test.EventDataPr
                 }
 
                 [Fact]
-                public void Should_save_tag()
+                public void Should_save_data()
                 {
                     Assert.StartsWith(this.initialTag, this.savingNeuron.Tag);
                 }
@@ -124,11 +143,13 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Test.EventDataPr
                     return new Neuron() { Id = id.ToString(), Tag = this.initialTag };
                 }
 
+                protected override Terminal GetTerminal(Guid id) => null;
+
                 protected const string NewTag = "A whole new world";
 
                 protected override string EventName => "NeuronTagChanged";
 
-                protected override string Tag => $"{{\"Tag\":\"{TagChangedContext.NewTag}\",\"Id\":\"{this.guid.ToString()}\",\"Version\":{this.version},\"TimeStamp\":\"{this.timestamp}\"}}";
+                protected override string Data => $"{{\"Tag\":\"{TagChangedContext.NewTag}\",\"Id\":\"{this.guid.ToString()}\",\"Version\":{this.version},\"Timestamp\":\"{this.timestamp}\"}}";
             }
 
             public class When_data_is_valid : TagChangedContext
@@ -165,165 +186,72 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Test.EventDataPr
             }
         }
 
-        public class When_terminal_added
+        public class When_terminal_created
         {
-            public class TerminalAddedContext : SavingContext
+            public class TerminalCreatedContext : SavingContext
             {
                 protected string terminal1Id = Guid.NewGuid().ToString();
-                protected string terminal2Id = Guid.NewGuid().ToString();
+                protected string target1Id = Guid.NewGuid().ToString();
+                protected override Terminal GetTerminal(Guid id) => null;
+                protected override Neuron GetNeuron(Guid id) => null;
 
-                protected override Neuron GetNeuron(Guid id)
-                {
-                    return new Neuron()
-                    {
-                        Id = id.ToString(),
-                        Tag = this.initialTag
-                    };
-                }
+                protected override string EventName => "TerminalCreated";
 
-                protected override string EventName => "TerminalsAdded";
-
-                protected override string Tag => @"{
-  ""Terminals"": [
-    {
-      ""TargetId"": """ + this.terminal1Id + @""",
-      ""Effect"": 1,
-      ""Strength"": 1.0 
-    },
-    {
-      ""TargetId"": """ + this.terminal2Id + @""",
-      ""Effect"": 1,
-      ""Strength"": 1.0 
-    }
-  ],
-  ""Id"": """ + this.guid.ToString() + @""",
+                protected override string Data => @"{
+  ""PresynapticNeuronId"":""" + this.guid.ToString() + @""",
+  ""PostsynapticNeuronId"":""" + this.target1Id.ToString() + @""",
+  ""Effect"": 1,
+  ""Strength"": 1.0,
+  ""Id"": """ + this.terminal1Id.ToString() + @""",
   ""Version"": """ + this.version.ToString() + @""",
-  ""TimeStamp"": """ + this.timestamp + @"""
+  ""Timestamp"": """ + this.timestamp + @"""
 }";
             }
 
-            public class When_data_is_valid : TerminalAddedContext
+            public class When_data_is_valid : TerminalCreatedContext
             {
                 [Fact]
-                public void Should_get_correct_guid()
+                public void Should_save_terminal()
                 {
-                    Assert.Equal(this.guid, this.gettingGuid);
-                }
-
-                [Fact]
-                public void Should_save_neuron()
-                {
-                    Assert.NotNull(this.savingNeuron);
-                }
-
-                [Fact]
-                public void Should_save_two_terminals()
-                {
-                    Assert.Equal(2, this.savingNeuron.Terminals.Count());
+                    Assert.NotNull(this.savingTerminal);
                 }
 
                 [Fact]
                 public void Should_save_correct_terminal1()
                 {
-                    Assert.Equal(this.terminal1Id, this.savingNeuron.Terminals.ToArray()[0].TargetId);
+                    Assert.Equal(this.terminal1Id, this.savingTerminal.Id);
                 }
 
                 [Fact]
-                public void Should_save_correct_terminal2()
+                public void Should_save_correct_pretsynapticNeuronId1()
                 {
-                    Assert.Equal(this.terminal2Id, this.savingNeuron.Terminals.ToArray()[1].TargetId);
+                    Assert.Equal(this.guid.ToString(), this.savingTerminal.PresynapticNeuronId);
                 }
 
                 [Fact]
-                public void Should_save_correct_version()
+                public void Should_save_correct_postsynapticNeuronId1()
                 {
-                    Assert.Equal(this.version, this.savingNeuron.Version);
-                }
-
-                [Fact]
-                public void Should_save_correct_timestamp()
-                {
-                    Assert.Equal(this.timestamp, this.savingNeuron.Timestamp);
-                }
-            }
-        }
-
-        public class When_terminal_removed
-        {
-            public class TerminalRemovedContext : SavingContext
-            {
-                protected string terminal1Id = Guid.NewGuid().ToString();
-                protected string terminal2Id = Guid.NewGuid().ToString();
-
-                protected override Neuron GetNeuron(Guid id)
-                {
-                    return new Neuron()
-                    {
-                        Id = id.ToString(),
-                        Tag = this.initialTag,
-                        Terminals = new Terminal[]
-                        {
-                            new Terminal(Guid.NewGuid().ToString(), id.ToString(), this.terminal1Id, NeurotransmitterEffect.Excite, 1),
-                            new Terminal(Guid.NewGuid().ToString(), id.ToString(), this.terminal2Id, NeurotransmitterEffect.Excite, 1),
-                        }
-                    };
-                }
-
-                protected override string EventName => "TerminalsRemoved";
-
-                protected override string Tag => @"{
-  ""TargetIds"": [
-    """ + this.terminal1Id + @"""
-  ],
-  ""Id"": """ + this.guid.ToString() + @""",
-  ""Version"": """ + this.version.ToString() + @""",
-  ""TimeStamp"": """ + this.timestamp + @"""
-}";
-            }
-
-            public class When_data_is_valid : TerminalRemovedContext
-            {
-                [Fact]
-                public void Should_get_correct_guid()
-                {
-                    Assert.Equal(this.guid, this.gettingGuid);
-                }
-
-                [Fact]
-                public void Should_save_neuron()
-                {
-                    Assert.NotNull(this.savingNeuron);
-                }
-
-                [Fact]
-                public void Should_save_one_terminal_only()
-                {
-                    Assert.Single(this.savingNeuron.Terminals);
-                }
-
-                [Fact]
-                public void Should_save_correct_terminal()
-                {
-                    Assert.Equal(this.terminal2Id, this.savingNeuron.Terminals.ToArray()[0].TargetId);
+                    Assert.Equal(this.target1Id, this.savingTerminal.PostsynapticNeuronId);
                 }
 
                 [Fact]
                 public void Should_save_correct_version()
                 {
-                    Assert.Equal(this.version, this.savingNeuron.Version);
+                    Assert.Equal(this.version, this.savingTerminal.Version);
                 }
 
                 [Fact]
                 public void Should_save_correct_timestamp()
                 {
-                    Assert.Equal(this.timestamp, this.savingNeuron.Timestamp);
+                    Assert.Equal(this.timestamp, this.savingTerminal.Timestamp);
                 }
-            }
+            }            
         }
 
         public abstract class RemovalContext : ProcessContext
         {
             protected Neuron removingNeuron;
+            protected Terminal removingTerminal;
 
             protected override void Given()
             {
@@ -333,6 +261,11 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Test.EventDataPr
                     .Setup(e => e.Remove(It.IsAny<Neuron>(), It.IsAny<CancellationToken>()))
                     .Callback<Neuron, CancellationToken>((n, c) => this.removingNeuron = n)
                     .Returns<Neuron, CancellationToken>((n, c) => Task.CompletedTask);
+
+                this.terminalRepository
+                    .Setup(e => e.Remove(It.IsAny<Terminal>(), It.IsAny<CancellationToken>()))
+                    .Callback<Terminal, CancellationToken>((n, c) => this.removingTerminal = n)
+                    .Returns<Terminal, CancellationToken>((n, c) => Task.CompletedTask);
             }
         }
 
@@ -340,27 +273,23 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Test.EventDataPr
         {
             public class NeuronDeactivatedContext : RemovalContext
             {
-                protected string terminalId = Guid.NewGuid().ToString();
-
                 protected override Neuron GetNeuron(Guid id)
                 {
                     return new Neuron()
                     {
                         Id = id.ToString(),
-                        Tag = this.initialTag,
-                        Terminals = new Terminal[]
-                        {
-                                new Terminal(Guid.NewGuid().ToString(), id.ToString(), this.terminalId, NeurotransmitterEffect.Excite, 1),
-                        }
+                        Tag = this.initialTag
                     };
                 }
 
+                protected override Terminal GetTerminal(Guid id) => null;
+
                 protected override string EventName => "NeuronDeactivated";
 
-                protected override string Tag => @"{
+                protected override string Data => @"{
   ""Id"": """ + this.guid.ToString() + @""",
   ""Version"": 4,
-  ""TimeStamp"": ""2017-12-02T12:55:46.408498+00:00""
+  ""Timestamp"": ""2017-12-02T12:55:46.408498+00:00""
 }";
             }
 
@@ -376,6 +305,46 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Test.EventDataPr
                 public void Should_save_neuron()
                 {
                     Assert.NotNull(this.removingNeuron);
+                }
+            }
+        }
+
+        public class When_terminal_deactivated
+        {
+            public class DeactivatedContext : RemovalContext
+            {
+                protected override Neuron GetNeuron(Guid id) => null;
+
+                protected override Terminal GetTerminal(Guid id) =>
+                    new Terminal(
+                        id.ToString(),
+                        Guid.NewGuid().ToString(),
+                        Guid.NewGuid().ToString(),
+                        NeurotransmitterEffect.Excite,
+                        1f
+                        );
+
+            protected override string EventName => "TerminalDeactivated";
+
+                protected override string Data => @"{
+  ""Id"": """ + this.guid.ToString() + @""",
+  ""Version"": 2,
+  ""Timestamp"": ""2017-12-02T12:55:46.408498+00:00""
+}";
+            }
+
+            public class When_data_is_valid : DeactivatedContext
+            {
+                [Fact]
+                public void Should_get_correct_guid()
+                {
+                    Assert.Equal(this.guid, this.gettingTerminalGuid);
+                }
+
+                [Fact]
+                public void Should_save_neuron()
+                {
+                    Assert.NotNull(this.removingTerminal);
                 }
             }
         }

@@ -9,7 +9,6 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
 {
     public class SettingsRepository : IRepository<Settings>
     {
-        private const string CollectionName = "Settings";
         private string settingName;
 
         public async Task<Settings> Get(Guid dtoGuid, CancellationToken cancellationToken = default(CancellationToken))
@@ -21,7 +20,7 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
 
             using (var db = ArangoDatabase.CreateWithSetting(this.settingName))
             {
-                if ((await db.ListCollectionsAsync()).Any(c => c.Name == SettingsRepository.CollectionName))
+                if ((await db.ListCollectionsAsync()).Any(c => c.Name == nameof(Settings)))
                     result = await db.DocumentAsync<Settings>(dtoGuid.ToString());
             }
 
@@ -35,9 +34,9 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
 
             using (var db = ArangoDatabase.CreateWithSetting(this.settingName))
             {
-                if (!db.ListCollections().Any(c => c.Name == SettingsRepository.CollectionName))
+                if (!db.ListCollections().Any(c => c.Name == nameof(Settings)))
                     throw new InvalidOperationException(
-                        $"Collection '{SettingsRepository.CollectionName}' not initialized."
+                        $"Collection '{nameof(Settings)}' not initialized."
                     );
 
                 if (await db.DocumentAsync<Settings>(dto.Id) == null)
@@ -51,11 +50,7 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
         {
             using (var db = ArangoDatabase.CreateWithSetting(this.settingName))
             {
-                var lgs = db.ListGraphs();
-                if ((await db.ListCollectionsAsync()).Any(c => c.Name == SettingsRepository.CollectionName))
-                    await db.DropCollectionAsync(SettingsRepository.CollectionName);
-
-                await db.CreateCollectionAsync(SettingsRepository.CollectionName);
+                await Helper.Clear(db, nameof(Settings));
             }
         }
 

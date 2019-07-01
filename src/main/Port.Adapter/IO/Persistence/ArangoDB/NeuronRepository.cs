@@ -1,5 +1,6 @@
 ﻿using ArangoDB.Client;
 using ArangoDB.Client.Data;
+using org.neurul.Common.Domain.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,11 +12,9 @@ using works.ei8.Cortex.Graph.Domain.Model;
 namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
 {
     public class NeuronRepository : INeuronRepository
-    {
-        private const string GraphName = "Graph";
+    {       
         private const string InitialQueryFilters = "FILTER ";
-        private const string EdgePrefix = nameof(Neuron) + "/";
-        private string settingName;
+        private string databaseName;
 
         public NeuronRepository()
         {            
@@ -23,13 +22,15 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
 
         public async Task Clear()
         {
-            using (var db = ArangoDatabase.CreateWithSetting(this.settingName))
+            using (var db = ArangoDatabase.CreateWithSetting(this.databaseName))
             {
-                var lgs = await db.ListGraphsAsync();
-                if (lgs.Any(a => a.Id == "_graphs/" + NeuronRepository.GraphName))
-                    await db.Graph(NeuronRepository.GraphName).DropAsync(true);
+                await Helper.Clear(db, nameof(Neuron));
 
-                await db.Graph(NeuronRepository.GraphName).CreateAsync(new List<EdgeDefinitionTypedData>
+                var lgs = await db.ListGraphsAsync();
+                if (lgs.Any(a => a.Id == "_graphs/" + Constants.GraphName))
+                    await db.Graph(Constants.GraphName).DropAsync(true);
+
+                await db.Graph(Constants.GraphName).CreateAsync(new List<EdgeDefinitionTypedData>
                 {
                     new EdgeDefinitionTypedData()
                     {
@@ -43,7 +44,7 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
 
         public async Task<Neuron> Get(Guid guid, CancellationToken token = default(CancellationToken))
         {
-            return (await this.Get(guid, shouldLoadTerminals:true)).FirstOrDefault()?.Neuron;
+            return (await this.GetRelative(guid)).FirstOrDefault()?.Neuron;
         }
 
         private static EdgeDirection ConvertRelativeToDirection(RelativeType type)
@@ -59,32 +60,26 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
             }
         }
 
-        public async Task<IEnumerable<NeuronResult>> Get(Guid guid, Guid? centralGuid = null, RelativeType type = RelativeType.NotSet, bool shouldLoadTerminals = false, CancellationToken token = default(CancellationToken))
+        public async Task<IEnumerable<NeuronResult>> GetRelative(Guid guid, Guid? centralGuid = null, RelativeType type = RelativeType.NotSet, CancellationToken token = default(CancellationToken))
         {
             IEnumerable<NeuronResult> result = null;
 
-            using (var db = ArangoDatabase.CreateWithSetting(this.settingName))
+            using (var db = ArangoDatabase.CreateWithSetting(this.databaseName))
             {
-                if (!db.ListGraphs().Any(a => a.Id == "_graphs/" + NeuronRepository.GraphName))
-                    throw new InvalidOperationException($"Graph '{NeuronRepository.GraphName}' not initialized.");
+                AssertionConcern.AssertStateTrue(await Helper.GraphExists(db), Constants.Messages.Error.GraphNotInitialized);
 
                 if (!centralGuid.HasValue)
                     result = new NeuronResult[] { new NeuronResult() { Neuron = await db.DocumentAsync<Neuron>(guid.ToString()) } };
                 else
                 {
-                    var temp = NeuronRepository.GetNeuronResults(centralGuid.Value, this.settingName, NeuronRepository.ConvertRelativeToDirection(type));
+                    var temp = NeuronRepository.GetNeuronResults(centralGuid.Value, this.databaseName, NeuronRepository.ConvertRelativeToDirection(type));
                     // TODO: optimize by passing this into GetNeuronResults AQL
-                    result = temp.Where(nr => 
-                        (nr.Neuron != null && nr.Neuron.Id == guid.ToString()) || 
-                        (nr.Terminal != null && nr.Terminal.TargetId == guid.ToString())
+                    result = temp.Where(nr =>
+                        (nr.Neuron != null && nr.Neuron.Id == guid.ToString()) ||
+                        (nr.Terminal != null && nr.Terminal.PostsynapticNeuronId == guid.ToString())
                         );
                 }
-
-                // load terminals for the write model
-                if (shouldLoadTerminals)
-                    foreach(var nr in result)
-                        nr.Neuron.Terminals = (await NeuronRepository.GetTerminals(nr.Neuron.Id, db, EdgeDirection.Outbound)).ToArray();
-
+                
                 // KEEP: circular references will now be allowed 2018/10/24
                 // int c = db.Query()
                 //    .Traversal<Neuron, Terminal>(EdgePrefix + guid.ToString())
@@ -98,20 +93,6 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
             }
 
             return result;
-        }
-
-        // DEL: should integrate with main neuron query
-        private static async Task<IEnumerable<Terminal>> GetTerminals(string id, IArangoDatabase db, EdgeDirection direction)
-        {
-            return (await db.EdgesAsync<Terminal>(EdgePrefix + id.ToString(), direction))
-                .Select(x => new Terminal(
-                        x.Id,
-                        x.NeuronId.Substring(EdgePrefix.Length),
-                        x.TargetId.Substring(EdgePrefix.Length),
-                        x.Effect,
-                        x.Strength
-                    )
-                );
         }
 
         private static IEnumerable<NeuronResult> GetNeuronResults(Guid? centralGuid, string settingName, EdgeDirection direction, NeuronQuery neuronQuery = null, int? limit = 1000, CancellationToken token = default(CancellationToken))
@@ -132,99 +113,18 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
 
         public async Task Remove(Neuron value, CancellationToken token = default(CancellationToken))
         {
-            using (var db = ArangoDatabase.CreateWithSetting(this.settingName))
-            {
-                if (!db.ListGraphs().Any(a => a.Id == "_graphs/" + NeuronRepository.GraphName))
-                    throw new InvalidOperationException($"Graph '{NeuronRepository.GraphName}' not initialized.");
-
-                var txnParams = new List<object> { value };
-
-                string[] collections = new string[] { nameof(Neuron), nameof(Terminal) };
-
-                // https://docs.arangodb.com/3.1/Manual/Appendix/JavaScriptModules/ArangoDB.html
-                // This 'ArangoDB' module should not be confused with the arangojs JavaScript driver.
-                var r = await db.ExecuteTransactionAsync<object>(
-                    new TransactionData()
-                    {
-                        Collections = new TransactionCollection()
-                        {
-                            Read = collections,
-                            Write = collections
-                        },
-                        Action = @"
-    function (params) { 
-        const db = require('@arangodb').db;
-        var tid = 'Neuron/' + params[0]._key;
-
-        if (db.Neuron.exists(params[0]))
-        {
-            db._query(aqlQuery`FOR t IN Terminal FILTER t._from == ${tid} REMOVE t IN Terminal`);
-            db.Neuron.remove(params[0]);
-        }
-    }",
-                        Params = txnParams
-                    }
-                    );
-            }
+            await Helper.Remove(value, nameof(Neuron), this.databaseName);
         }
 
         public async Task Save(Neuron value, CancellationToken token = default(CancellationToken))
         {
-            using (var db = ArangoDatabase.CreateWithSetting(this.settingName))
-            {
-                if (!db.ListGraphs().Any(a => a.Id == "_graphs/" + NeuronRepository.GraphName))
-                    throw new InvalidOperationException($"Graph '{NeuronRepository.GraphName}' not initialized.");
-
-                var txnParams = new List<object> { value };
-                foreach (Terminal td in value.Terminals)
-                    txnParams.Add(
-                        new Terminal(
-                            td.Id,
-                            EdgePrefix + td.NeuronId,
-                            EdgePrefix + td.TargetId,
-                            td.Effect,
-                            td.Strength
-                            )
-                        );
-
-                string[] collections = new string[] { nameof(Neuron), nameof(Terminal) };
-
-                // https://docs.arangodb.com/3.1/Manual/Appendix/JavaScriptModules/ArangoDB.html
-                // This 'ArangoDB' module should not be confused with the arangojs JavaScript driver.
-                var r = await db.ExecuteTransactionAsync<object>(
-                    new TransactionData()
-                    {
-                        Collections = new TransactionCollection()
-                        {
-                            Read = collections,
-                            Write = collections
-                        },
-                        Action = @"
-    function (params) { 
-        const db = require('@arangodb').db;
-        var tid = 'Neuron/' + params[0]._key;
-
-        if (db.Neuron.exists(params[0]))
-        {
-            db._query(aqlQuery`FOR t IN Terminal FILTER t._from == ${tid} REMOVE t IN Terminal`);
-            db.Neuron.remove(params[0]);
-        }
-
-        db.Neuron.save(params[0]);
-        for (i = 1; i < params.length; i++)
-        {
-            db.Terminal.save(params[i]);
-        }
-    }",
-                        Params = txnParams
-                    }
-                    );
-            }
+            await Helper.Save(value, nameof(Neuron), this.databaseName);
         }
 
         public async Task Initialize(string databaseName)
-        {            await Helper.CreateDatabase(databaseName);
-            this.settingName = databaseName;
+        {
+            await Helper.CreateDatabase(databaseName);
+            this.databaseName = databaseName;
         }
 
         public async Task<IEnumerable<NeuronResult>> GetAll(Guid? centralGuid = null, RelativeType type = RelativeType.NotSet, NeuronQuery neuronQuery = null, int? limit = 1000, CancellationToken token = default(CancellationToken))
@@ -233,7 +133,7 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
 
             result = NeuronRepository.GetNeuronResults(
                 centralGuid,
-                this.settingName,
+                this.databaseName,
                 NeuronRepository.ConvertRelativeToDirection(type),
                 neuronQuery,
                 limit);

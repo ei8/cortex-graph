@@ -38,13 +38,15 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.In.Api
             ((TinyIoCServiceLocator)container.Resolve<IServiceProvider>()).SetRequestContainer(container);
 
             container.Register<IRepository<Neuron>, NeuronRepository>();
+            container.Register<IRepository<Terminal>, TerminalRepository>();
             container.Register<IRepository<Domain.Model.Settings>, SettingsRepository>();
             container.Register<Func<INotificationLogClient>>(() => {
                 return new StandardNotificationLogClient(
                         Environment.GetEnvironmentVariable(EnvironmentVariableKeys.EventInfoLogBaseUrl),
                         int.Parse(Environment.GetEnvironmentVariable(EnvironmentVariableKeys.PollInterval)),
                         container.Resolve<IRepository<Domain.Model.Settings>>(),
-                        container.Resolve<IRepository<Neuron>>()
+                        container.Resolve<IRepository<Neuron>>(),
+                        container.Resolve<IRepository<Terminal>>()
                         );
                     }
                     );

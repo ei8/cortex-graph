@@ -7,11 +7,11 @@ namespace works.ei8.Cortex.Graph.Domain.Model
 {
     public class Terminal
     {
-        public Terminal(string id, string neuronId, string targetId, NeurotransmitterEffect effect, float strength)
+        public Terminal(string id, string presynapticNeuronId, string postsynapticNeuronId, NeurotransmitterEffect effect, float strength)
         {           
             this.Id = id;
-            this.NeuronId = neuronId;
-            this.TargetId = targetId;
+            this.PresynapticNeuronId = presynapticNeuronId;
+            this.PostsynapticNeuronId = postsynapticNeuronId;
             this.Effect = effect;
             this.Strength = strength;
         }
@@ -19,31 +19,31 @@ namespace works.ei8.Cortex.Graph.Domain.Model
         [DocumentProperty(Identifier = IdentifierType.Key)]
         public string Id { get; set; }
 
-        private string neuronId;
+        private string presynapticNeuronId;
         [DocumentProperty(Identifier = IdentifierType.EdgeFrom)]
-        public string NeuronId
+        public string PresynapticNeuronId
         {
             get
             {
-                return this.neuronId;
+                return this.presynapticNeuronId;
             }
             set
             {
-                this.neuronId = value;
+                this.presynapticNeuronId = value;
             }
         }
 
-        private string targetId;
+        private string postsynapticNeuronId;
         [DocumentProperty(Identifier = IdentifierType.EdgeTo)]
-        public string TargetId
+        public string PostsynapticNeuronId
         {
             get
             {
-                return this.targetId;
+                return this.postsynapticNeuronId;
             }
             set
             {
-                this.targetId = value;
+                this.postsynapticNeuronId = value;
             }
         }
 
@@ -62,5 +62,9 @@ namespace works.ei8.Cortex.Graph.Domain.Model
             get { return strength; }
             set { strength = value; }
         }
+        
+        public string Timestamp { get; set; }
+
+        public int Version { get; set; }
     }
 }

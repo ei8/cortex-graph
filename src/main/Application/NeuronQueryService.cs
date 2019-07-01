@@ -46,7 +46,7 @@ namespace works.ei8.Cortex.Graph.Application
             IEnumerable<NeuronData> result = null;
 
             await this.neuronRepository.Initialize(avatarId);
-            result = (await this.neuronRepository.Get(Guid.Parse(id), NeuronQueryService.GetNullableStringGuid(centralId), NeuronQueryService.GetRelativeDomainModel(type)))
+            result = (await this.neuronRepository.GetRelative(Guid.Parse(id), NeuronQueryService.GetNullableStringGuid(centralId), NeuronQueryService.GetRelativeDomainModel(type)))
                 .Select(n => this.ConvertNeuronToData(n, centralId));
 
             return result;
@@ -76,14 +76,14 @@ namespace works.ei8.Cortex.Graph.Application
                     if (nv.Terminal?.Id != null)
                     {
                         if (nv.Neuron?.Id != null)
-                            result.Type = nv.Terminal.NeuronId.EndsWith(nv.Neuron.Id) ? Data.RelativeType.Presynaptic : Data.RelativeType.Postsynaptic;
+                            result.Type = nv.Terminal.PresynapticNeuronId.EndsWith(nv.Neuron.Id) ? Data.RelativeType.Presynaptic : Data.RelativeType.Postsynaptic;
                         else
                         {
                             // If terminal is set but neuron is not set, terminal is targetting a deactivated neuron
                             result.Type = Data.RelativeType.Postsynaptic;
                             result.Tag = "[Not found]";
-                            result.Id = nv.Terminal.TargetId;
-                            result.Errors = new string[] { $"Unable to find Neuron with ID '{nv.Terminal.TargetId}'" };
+                            result.Id = nv.Terminal.PostsynapticNeuronId;
+                            result.Errors = new string[] { $"Unable to find Neuron with ID '{nv.Terminal.PostsynapticNeuronId}'" };
                         }
 
                         result.Effect = ((int)nv.Terminal.Effect).ToString();
