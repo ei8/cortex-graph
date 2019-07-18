@@ -60,10 +60,7 @@ namespace works.ei8.Cortex.Graph.Application
             {
                 if (nv.Neuron != null || nv.Terminal != null)
                 {
-                    result = new NeuronData
-                    {
-                        CentralId = centralId
-                    };
+                    result = new NeuronData();
 
                     if (nv.Neuron?.Id != null)
                     {
@@ -75,19 +72,22 @@ namespace works.ei8.Cortex.Graph.Application
 
                     if (nv.Terminal?.Id != null)
                     {
-                        if (nv.Neuron?.Id != null)
-                            result.Type = nv.Terminal.PresynapticNeuronId.EndsWith(nv.Neuron.Id) ? Data.RelativeType.Presynaptic : Data.RelativeType.Postsynaptic;
-                        else
+                        if (nv.Neuron?.Id == null)
                         {
+                            // TODO: also handle case wherein presynaptic Neuron is deactivated
                             // If terminal is set but neuron is not set, terminal is targetting a deactivated neuron
-                            result.Type = Data.RelativeType.Postsynaptic;
                             result.Tag = "[Not found]";
                             result.Id = nv.Terminal.PostsynapticNeuronId;
                             result.Errors = new string[] { $"Unable to find Neuron with ID '{nv.Terminal.PostsynapticNeuronId}'" };
                         }
 
-                        result.Effect = ((int)nv.Terminal.Effect).ToString();
-                        result.Strength = nv.Terminal.Strength.ToString();
+                        result.Terminal.Id = nv.Terminal.Id;
+                        result.Terminal.PresynapticNeuronId = nv.Terminal.PresynapticNeuronId;
+                        result.Terminal.PostsynapticNeuronId = nv.Terminal.PostsynapticNeuronId;
+                        result.Terminal.Effect = ((int)nv.Terminal.Effect).ToString();
+                        result.Terminal.Strength = nv.Terminal.Strength.ToString();
+                        result.Terminal.Version = nv.Terminal.Version;
+                        result.Terminal.Timestamp = nv.Terminal.Timestamp;
                     }
                 }
             }

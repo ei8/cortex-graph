@@ -53,14 +53,11 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
 
         public async Task Save(Terminal value, CancellationToken cancellationToken = default(CancellationToken))
         {
-            var updatedTerminal = new Terminal(
-                value.Id,
-                TerminalRepository.EdgePrefix + value.PresynapticNeuronId,
-                TerminalRepository.EdgePrefix + value.PostsynapticNeuronId,
-                value.Effect,
-                value.Strength
-                );
-            await Helper.Save(updatedTerminal, nameof(Terminal), this.databaseName);
+            // update foreign keys
+            value.PresynapticNeuronId = TerminalRepository.EdgePrefix + value.PresynapticNeuronId;
+            value.PostsynapticNeuronId = TerminalRepository.EdgePrefix + value.PostsynapticNeuronId;
+            
+            await Helper.Save(value, nameof(Terminal), this.databaseName);
         }
 
         // TODO: update to retrieve orphan terminals
