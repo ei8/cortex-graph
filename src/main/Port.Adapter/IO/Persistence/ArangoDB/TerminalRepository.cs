@@ -16,7 +16,7 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
         {
             using (var db = ArangoDatabase.CreateWithSetting(this.databaseName))
             {
-                await Helper.Clear(db, nameof(Terminal));
+                await Helper.Clear(db, nameof(Terminal), CollectionType.Edge);
             }
         }
 

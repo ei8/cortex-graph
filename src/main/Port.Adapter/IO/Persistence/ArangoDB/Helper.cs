@@ -109,12 +109,12 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
             }
         }
 
-        internal static async Task Clear(IArangoDatabase db, string collectionName)
+        internal static async Task Clear(IArangoDatabase db, string collectionName, CollectionType type = CollectionType.Document)
         {
             if ((await db.ListCollectionsAsync()).Any(c => c.Name == collectionName))
                 await db.DropCollectionAsync(collectionName);
 
-            await db.CreateCollectionAsync(collectionName);
+            await db.CreateCollectionAsync(collectionName, type: type);
         }
 
     }

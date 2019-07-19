@@ -2,13 +2,13 @@ version: '3'
 
 services:
   in.api:
-    image: ei8works/cortex.graph.in.api:0.2.6
+    image: ei8works/cortex.graph.in.api:0.2.7
     build:
       context: .
       dockerfile: main\Port.Adapter\In\Api\Dockerfile
 
   out.api:
-    image: ei8works/cortex.graph.out.api:0.2.6
+    image: ei8works/cortex.graph.out.api:0.2.7
     build:
       context: .
       dockerfile: main\Port.Adapter\Out\Api\Dockerfile
