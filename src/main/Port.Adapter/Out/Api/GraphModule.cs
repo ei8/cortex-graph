@@ -1,4 +1,5 @@
-﻿using Nancy;
+﻿using CQRSlite.Domain.Exception;
+using Nancy;
 using Nancy.Responses;
 using Nancy.Security;
 using Newtonsoft.Json;
@@ -16,14 +17,26 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.Out.Api
 
         public GraphModule(INeuronQueryService queryService) : base("/{avatarId}/cortex/graph")
         {
-            // TODO: this.RequiresAuthentication();
+            this.RequiresAuthentication();
 
             this.Get("/neurons", async (parameters) =>
             {
-                var limit = this.Request.Query["limit"].HasValue ? this.Request.Query["limit"].ToString() : GraphModule.DefaultLimit;
+                var result = new Response { StatusCode = HttpStatusCode.OK };
 
-                var nv = await queryService.GetNeurons(parameters.avatarId, neuronQuery: GraphModule.ExtractQuery(this.Request.Query), limit: int.Parse(limit));
-                return new TextResponse(JsonConvert.SerializeObject(nv));
+                // TODO-EB: handle for all paths
+                try
+                {
+                    var limit = this.Request.Query["limit"].HasValue ? this.Request.Query["limit"].ToString() : GraphModule.DefaultLimit;
+
+                    var nv = await queryService.GetNeurons(parameters.avatarId, neuronQuery: GraphModule.ExtractQuery(this.Request.Query), limit: int.Parse(limit));
+                    result = new TextResponse(JsonConvert.SerializeObject(nv));
+                }
+                catch (Exception ex)
+                {
+                    result = new TextResponse(HttpStatusCode.BadRequest, ex.ToString());
+                }
+
+                return result;
             }
             );
 
