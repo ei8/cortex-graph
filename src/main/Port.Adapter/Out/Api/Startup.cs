@@ -16,7 +16,7 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.Out.Api
                     options.Authority = Environment.GetEnvironmentVariable(EnvironmentVariableKeys.TokenIssuerAddress);
                     options.RequireHttpsMetadata = false;
                     options.ApiSecret = "secret";
-                    options.ApiName = "api1";
+                    options.ApiName = "cortex-graph-out";
                 });
         }
 
