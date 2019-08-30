@@ -68,6 +68,10 @@ namespace works.ei8.Cortex.Graph.Application
                         result.Tag = nv.Neuron.Tag;
                         result.Timestamp = nv.Neuron.Timestamp;
                         result.Version = nv.Neuron.Version;
+                        result.AuthorId = nv.Neuron.AuthorId;
+                        result.AuthorTag = nv.NeuronAuthorTag;
+                        result.LayerId = nv.Neuron.LayerId;
+                        result.LayerTag = nv.LayerTag;
                     }
 
                     if (nv.Terminal?.Id != null)
@@ -88,6 +92,8 @@ namespace works.ei8.Cortex.Graph.Application
                         result.Terminal.Strength = nv.Terminal.Strength.ToString();
                         result.Terminal.Version = nv.Terminal.Version;
                         result.Terminal.Timestamp = nv.Terminal.Timestamp;
+                        result.Terminal.AuthorId = nv.Terminal.AuthorId;
+                        result.Terminal.AuthorTag = nv.TerminalAuthorTag;
                     }
                 }
             }

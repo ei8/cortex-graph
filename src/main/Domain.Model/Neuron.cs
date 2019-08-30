@@ -19,6 +19,10 @@ namespace works.ei8.Cortex.Graph.Domain.Model
 
         public string Timestamp { get; set; }
 
+        public string LayerId { get; set; }
+
+        public string AuthorId { get; set; }
+
         public int Version { get; set; }
     }
 }

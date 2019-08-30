@@ -5,8 +5,10 @@ using Nancy.Security;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using works.ei8.Cortex.Graph.Application;
 using works.ei8.Cortex.Graph.Domain.Model;
+using works.ei8.Cortex.Graph.Port.Adapter.Common;
 
 namespace works.ei8.Cortex.Graph.Port.Adapter.Out.Api
 {
@@ -17,63 +19,69 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.Out.Api
 
         public GraphModule(INeuronQueryService queryService) : base("/{avatarId}/cortex/graph")
         {
-            this.RequiresAuthentication();
+            if (bool.TryParse(Environment.GetEnvironmentVariable(EnvironmentVariableKeys.RequireAuthentication), out bool value) && value)
+                this.RequiresAuthentication();
 
             this.Get("/neurons", async (parameters) =>
             {
-                var result = new Response { StatusCode = HttpStatusCode.OK };
+                return await GraphModule.ProcessRequest(async () =>
+                    {
+                        var limit = this.Request.Query["limit"].HasValue ? this.Request.Query["limit"].ToString() : GraphModule.DefaultLimit;
 
-                // TODO-EB: handle for all paths
-                try
-                {
-                    var limit = this.Request.Query["limit"].HasValue ? this.Request.Query["limit"].ToString() : GraphModule.DefaultLimit;
-
-                    var nv = await queryService.GetNeurons(parameters.avatarId, neuronQuery: GraphModule.ExtractQuery(this.Request.Query), limit: int.Parse(limit));
-                    result = new TextResponse(JsonConvert.SerializeObject(nv));
-                }
-                catch (Exception ex)
-                {
-                    result = new TextResponse(HttpStatusCode.BadRequest, ex.ToString());
-                }
-
-                return result;
+                        var nv = await queryService.GetNeurons(parameters.avatarId, neuronQuery: GraphModule.ExtractQuery(this.Request.Query), limit: int.Parse(limit));
+                        return new TextResponse(JsonConvert.SerializeObject(nv));
+                    }
+                );
             }
             );
 
             this.Get("/neurons/{neuronid:guid}", async (parameters) =>
             {
-                var nv = await queryService.GetNeuronById(parameters.avatarId, parameters.neuronid);
-                return new TextResponse(JsonConvert.SerializeObject(nv));
+                return await GraphModule.ProcessRequest(async () =>
+                {
+                    var nv = await queryService.GetNeuronById(parameters.avatarId, parameters.neuronid);
+                    return new TextResponse(JsonConvert.SerializeObject(nv));
+                }
+                );
             }
             );
 
             this.Get("/neurons/{centralid:guid}/relatives", async (parameters) =>
             {
-                var type =  this.Request.Query["type"].HasValue ? this.Request.Query["type"].ToString() : GraphModule.DefaultType;
-                var limit = this.Request.Query["limit"].HasValue ? this.Request.Query["limit"].ToString() : GraphModule.DefaultLimit;
+                return await GraphModule.ProcessRequest(async() =>
+                    {
+                        var type = this.Request.Query["type"].HasValue ? this.Request.Query["type"].ToString() : GraphModule.DefaultType;
+                        var limit = this.Request.Query["limit"].HasValue ? this.Request.Query["limit"].ToString() : GraphModule.DefaultLimit;
 
-                var nv = await queryService.GetNeurons(
-                    parameters.avatarId, 
-                    parameters.centralid, 
-                    Enum.Parse(typeof(Application.Data.RelativeType), type),
-                    GraphModule.ExtractQuery(this.Request.Query),
-                    int.Parse(limit)
-                    );
-                return new TextResponse(JsonConvert.SerializeObject(nv));
+                        var nv = await queryService.GetNeurons(
+                            parameters.avatarId,
+                            parameters.centralid,
+                            Enum.Parse(typeof(Application.Data.RelativeType), type),
+                            GraphModule.ExtractQuery(this.Request.Query),
+                            int.Parse(limit)
+                            );
+
+                        return new TextResponse(JsonConvert.SerializeObject(nv));
+                    }
+                );
             }
             );
 
             this.Get("/neurons/{centralid:guid}/relatives/{neuronid:guid}", async (parameters) =>
             {
-                var type = this.Request.Query["type"].HasValue ? this.Request.Query["type"].ToString() : GraphModule.DefaultType;
+                return await GraphModule.ProcessRequest(async () =>
+                    {
+                        var type = this.Request.Query["type"].HasValue ? this.Request.Query["type"].ToString() : GraphModule.DefaultType;
 
-                var nv = await queryService.GetNeuronById(
-                    parameters.avatarId, 
-                    parameters.neuronid, 
-                    parameters.centralid,
-                    Enum.Parse(typeof(Application.Data.RelativeType), type)
-                    );
-                return new TextResponse(JsonConvert.SerializeObject(nv));
+                        var nv = await queryService.GetNeuronById(
+                            parameters.avatarId,
+                            parameters.neuronid,
+                            parameters.centralid,
+                            Enum.Parse(typeof(Application.Data.RelativeType), type)
+                            );
+                        return new TextResponse(JsonConvert.SerializeObject(nv));
+                    }
+                );
             }
             );
         }
@@ -98,6 +106,22 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.Out.Api
                     query[parameterNameExclamation].HasValue ?
                     query[parameterNameExclamation].ToString().Split(",") :
                     null;
+        }
+
+        internal static async Task<Response> ProcessRequest(Func<Task<Response>> action)
+        {
+            var result = new Response { StatusCode = HttpStatusCode.OK };
+
+            try
+            {
+                result = await action();
+            }
+            catch (Exception ex)
+            {
+                result = new TextResponse(HttpStatusCode.BadRequest, ex.ToString());
+            }
+
+            return result;
         }
     }
 }

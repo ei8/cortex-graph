@@ -18,6 +18,10 @@ namespace works.ei8.Cortex.Graph.Application.Data
 
         public int Version { get; set; }
 
+        public string AuthorId { get; set; }
+
+        public string AuthorTag { get; set; }
+
         public string Timestamp { get; set; }
     }
 }

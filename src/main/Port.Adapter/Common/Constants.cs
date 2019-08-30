@@ -12,6 +12,7 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.Common
         public const string DbUrl = @"DB_URL";
         public const string DbUsername = @"DB_USERNAME";
         public const string DbPassword = @"DB_PASSWORD";
+        public const string RequireAuthentication = "REQUIRE_AUTHENTICATION";
         public const string TokenIssuerAddress = "TOKEN_ISSUER_ADDRESS";
     }
 }

@@ -13,5 +13,11 @@ namespace works.ei8.Cortex.Graph.Domain.Model
         public Neuron Neuron { get; set; }
 
         public Terminal Terminal { get; set; }
+
+        public string NeuronAuthorTag { get; set; }
+
+        public string TerminalAuthorTag { get; set; }
+
+        public string LayerTag { get; set; }
     }
 }

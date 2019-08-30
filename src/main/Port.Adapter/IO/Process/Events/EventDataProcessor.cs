@@ -25,6 +25,8 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events
                         Tag = JsonHelper.GetRequiredValue<string>(jd, nameof(Neuron.Tag)),
                         Version = JsonHelper.GetRequiredValue<int>(jd, nameof(Neuron.Version)),
                         Timestamp = JsonHelper.GetRequiredValue<string>(jd, nameof(Neuron.Timestamp)),
+                        LayerId = JsonHelper.GetRequiredValue<string>(jd, nameof(Neuron.LayerId)),
+                        AuthorId = JsonHelper.GetRequiredValue<string>(jd, nameof(Neuron.AuthorId))
                     };
                     await repository.Save(n);
                     result = true;
@@ -36,6 +38,7 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events
                     n.Tag = JsonHelper.GetRequiredValue<string>(jd, nameof(Neuron.Tag));
                     n.Version = JsonHelper.GetRequiredValue<int>(jd, nameof(Neuron.Version));
                     n.Timestamp = JsonHelper.GetRequiredValue<string>(jd, nameof(Neuron.Timestamp));
+                    n.AuthorId = JsonHelper.GetRequiredValue<string>(jd, nameof(Neuron.AuthorId));
                     await repository.Save(n);
                     result = true;
                     break;
@@ -43,7 +46,7 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events
                     n = await repository.Get(Guid.Parse(
                         JsonHelper.GetRequiredValue<string>(jd, nameof(Neuron.Id))
                     ));
-
+                    // TODO: don't remove, just change Active value to false?
                     await repository.Remove(n);
                     result = true;
                     break;
@@ -57,7 +60,8 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events
                             )
                     {
                         Version = JsonHelper.GetRequiredValue<int>(jd, nameof(Terminal.Version)),
-                        Timestamp = JsonHelper.GetRequiredValue<string>(jd, nameof(Terminal.Timestamp))
+                        Timestamp = JsonHelper.GetRequiredValue<string>(jd, nameof(Terminal.Timestamp)),
+                        AuthorId = JsonHelper.GetRequiredValue<string>(jd, nameof(Terminal.AuthorId))
                     };
                     await terminalRepository.Save(t);
                     result = true;
@@ -66,7 +70,7 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events
                     t = await terminalRepository.Get(Guid.Parse(
                         JsonHelper.GetRequiredValue<string>(jd, nameof(Terminal.Id))
                     ));
-
+                    // TODO: don't remove, just change Active value to false?
                     await terminalRepository.Remove(t);
                     result = true;
                     break;
