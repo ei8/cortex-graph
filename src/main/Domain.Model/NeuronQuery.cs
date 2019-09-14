@@ -17,5 +17,9 @@ namespace works.ei8.Cortex.Graph.Domain.Model
         public IEnumerable<string> TagContains { get; set; }
 
         public IEnumerable<string> TagContainsNot { get; set; }
+
+        public IEnumerable<string> Id { get; set; }
+
+        public IEnumerable<string> IdNot { get; set; }
     }
 }

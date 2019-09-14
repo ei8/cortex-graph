@@ -8,7 +8,7 @@ services:
       dockerfile: main\Port.Adapter\In\Api\Dockerfile
 
   out.api:
-    image: ei8works/cortex.graph.out.api:0.2.8
+    image: ei8works/cortex.graph.out.api:0.2.9
     build:
       context: .
       dockerfile: main\Port.Adapter\Out\Api\Dockerfile

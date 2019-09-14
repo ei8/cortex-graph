@@ -91,6 +91,8 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.Out.Api
             var nq = new NeuronQuery();
             nq.TagContains = GraphModule.GetQueryArrayOrDefault(query, nameof(NeuronQuery.TagContains));
             nq.TagContainsNot = GraphModule.GetQueryArrayOrDefault(query, nameof(NeuronQuery.TagContainsNot));
+            nq.Id = GraphModule.GetQueryArrayOrDefault(query, nameof(NeuronQuery.Id));
+            nq.IdNot = GraphModule.GetQueryArrayOrDefault(query, nameof(NeuronQuery.IdNot));
             nq.Postsynaptic = GraphModule.GetQueryArrayOrDefault(query, nameof(NeuronQuery.Postsynaptic));
             nq.PostsynapticNot = GraphModule.GetQueryArrayOrDefault(query, nameof(NeuronQuery.PostsynapticNot));
             nq.Presynaptic = GraphModule.GetQueryArrayOrDefault(query, nameof(NeuronQuery.Presynaptic));

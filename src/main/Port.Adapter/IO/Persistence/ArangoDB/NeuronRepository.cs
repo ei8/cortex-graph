@@ -162,6 +162,12 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
             // TagContainsNot
             NeuronRepository.ExtractContainsFilters(neuronQuery?.TagContainsNot, nameof(NeuronQuery.TagContainsNot), queryParameters, queryFiltersBuilder, "||", "NOT");
 
+            // IdEquals
+            NeuronRepository.ExtractIdFilters(neuronQuery?.Id, nameof(NeuronQuery.Id), queryParameters, queryFiltersBuilder, "||");
+
+            // IdEqualsNot
+            NeuronRepository.ExtractIdFilters(neuronQuery?.IdNot, nameof(NeuronQuery.IdNot), queryParameters, queryFiltersBuilder, "||", "NOT");
+
             var neuronAuthorLayer = @"
                         LET neuronAuthorTag = (
                             FOR neuronAuthorNeuron in Neuron
@@ -282,6 +288,28 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
                     }
                 ));
                 var filters = containsField.Select(f => $"Upper(n.Tag) LIKE Upper(@{filtersFieldName + (containsList.IndexOf(f) + 1)})");
+                queryFiltersBuilder.Append($"{logicWrapper}({string.Join($" {filterJoiner} ", filters)})");
+            }
+        }
+
+        private static void ExtractIdFilters(IEnumerable<string> idEqualsField, string filtersFieldName, List<QueryParameter> queryParameters, StringBuilder queryFiltersBuilder, string filterJoiner, string logicWrapper = "")
+        {
+            if (idEqualsField != null)
+            {
+                if (queryFiltersBuilder.Length == 0)
+                    queryFiltersBuilder.Append(NeuronRepository.InitialQueryFilters);
+                if (queryFiltersBuilder.Length > NeuronRepository.InitialQueryFilters.Length)
+                    queryFiltersBuilder.Append(" && ");
+
+                var idEqualsList = idEqualsField.ToList();
+                queryParameters.AddRange(idEqualsField.Select(s =>
+                    new QueryParameter()
+                    {
+                        Name = filtersFieldName + (idEqualsList.IndexOf(s) + 1),
+                        Value = $"Neuron/{s}"
+                    }
+                ));
+                var filters = idEqualsField.Select(f => $"n._id == @{filtersFieldName + (idEqualsList.IndexOf(f) + 1)}");
                 queryFiltersBuilder.Append($"{logicWrapper}({string.Join($" {filterJoiner} ", filters)})");
             }
         }
