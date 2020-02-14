@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using works.ei8.Cortex.Graph.Application.Data;
+using works.ei8.Cortex.Graph.Common;
 using works.ei8.Cortex.Graph.Domain.Model;
 
 namespace works.ei8.Cortex.Graph.Application
@@ -18,22 +19,17 @@ namespace works.ei8.Cortex.Graph.Application
             this.neuronRepository = neuronRepository;
         }
 
-        public async Task<IEnumerable<NeuronData>> GetNeurons(string avatarId, string centralId = default(string), Data.RelativeType type = Data.RelativeType.NotSet, NeuronQuery neuronQuery = null, 
+        public async Task<IEnumerable<NeuronData>> GetNeurons(string avatarId, string centralId = default(string), RelativeType type = RelativeType.NotSet, NeuronQuery neuronQuery = null, 
             int? limit = 1000, CancellationToken token = default(CancellationToken))
         {
             await this.neuronRepository.Initialize(avatarId);
             return (await this.neuronRepository.GetAll(
                     NeuronQueryService.GetNullableStringGuid(centralId), 
-                    NeuronQueryService.GetRelativeDomainModel(type), 
+                    type, 
                     neuronQuery, 
                     limit)
                     )
                 .Select((n) => (this.ConvertNeuronToData(n, centralId)));
-        }
-
-        private static Domain.Model.RelativeType GetRelativeDomainModel(Data.RelativeType type)
-        {
-            return (Domain.Model.RelativeType)((int)type);
         }
 
         private static Guid? GetNullableStringGuid(string value)
@@ -41,12 +37,12 @@ namespace works.ei8.Cortex.Graph.Application
             return (value == null ? (Guid?) null : Guid.Parse(value));
         }
 
-        public async Task<IEnumerable<NeuronData>> GetNeuronById(string avatarId, string id, string centralId = default(string), Data.RelativeType type = Data.RelativeType.NotSet, CancellationToken token = default(CancellationToken))
+        public async Task<IEnumerable<NeuronData>> GetNeuronById(string avatarId, string id, string centralId = default(string), RelativeType type = RelativeType.NotSet, CancellationToken token = default(CancellationToken))
         {
             IEnumerable<NeuronData> result = null;
 
             await this.neuronRepository.Initialize(avatarId);
-            result = (await this.neuronRepository.GetRelative(Guid.Parse(id), NeuronQueryService.GetNullableStringGuid(centralId), NeuronQueryService.GetRelativeDomainModel(type)))
+            result = (await this.neuronRepository.GetRelative(Guid.Parse(id), NeuronQueryService.GetNullableStringGuid(centralId), type))
                 .Select(n => this.ConvertNeuronToData(n, centralId));
 
             return result;

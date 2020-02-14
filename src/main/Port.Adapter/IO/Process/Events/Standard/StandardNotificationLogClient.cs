@@ -1,23 +1,19 @@
-﻿using Newtonsoft.Json;
+﻿using Flurl;
 using NLog;
-using org.neurul.Common;
-using org.neurul.Common.Constants;
 using org.neurul.Common.Domain.Model;
-using org.neurul.Common.Events;
 using Polly;
 using System;
 using System.Linq;
-using System.Net.Http;
-using System.Threading;
 using System.Threading.Tasks;
 using works.ei8.Cortex.Graph.Domain.Model;
+using works.ei8.EventSourcing.Client;
+using works.ei8.EventSourcing.Client.Out;
+using works.ei8.EventSourcing.Common;
 
 namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Standard
 {
     public class StandardNotificationLogClient : INotificationLogClient
     {
-        private static HttpClient httpClient = null;
-
         private static Policy exponentialRetryPolicy = Policy
             .Handle<Exception>()
             .WaitAndRetryAsync(
@@ -26,11 +22,9 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Standard
                 (ex, _) => StandardNotificationLogClient.logger.Error(ex, "Error occured while subscribing to events. " + ex.InnerException?.Message)
             );
         
-        private static string getEventsPathTemplate = "{0}/cortex/notifications/{1}";
         private const long StartPosition = 0;
-
-        private string avatarId;
         private static readonly Logger logger = LogManager.GetCurrentClassLogger();
+        private string notificationLogBaseUrl;
         private IRepository<Neuron> neuronRepository;
         private IRepository<Terminal> terminalRepository;
         private IRepository<Settings> settingsRepository;
@@ -39,14 +33,7 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Standard
 
         public StandardNotificationLogClient(string notificationLogBaseUrl, int pollInterval, IRepository<Settings> settingsRepository, IRepository<Neuron> neuronRepository, IRepository<Terminal> terminalRepository)
         {
-            if (StandardNotificationLogClient.httpClient == null)
-            {
-                StandardNotificationLogClient.httpClient = new HttpClient()
-                {
-                    BaseAddress = new Uri(notificationLogBaseUrl)
-                };
-            }
-
+            this.notificationLogBaseUrl = notificationLogBaseUrl;            
             this.neuronRepository = neuronRepository;
             this.terminalRepository = terminalRepository;
             this.settingsRepository = settingsRepository;
@@ -54,45 +41,47 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Standard
             this.pollInterval = pollInterval;
         }
 
-        private async Task Subscribe(string position) =>
-            await StandardNotificationLogClient.exponentialRetryPolicy.ExecuteAsync(async () => await this.SubscribeCore(position).ConfigureAwait(false));
+        private async Task Subscribe(string avatarId, string position) =>
+            await StandardNotificationLogClient.exponentialRetryPolicy.ExecuteAsync(async () => await this.SubscribeCore(
+                avatarId, position).ConfigureAwait(false));
 
-        private async Task SubscribeCore(string position)
+        private async Task SubscribeCore(string avatarId, string position)
         {
             this.polling = false;
-            await StandardNotificationLogClient.UpdateGraph(this.avatarId, position, this.neuronRepository, this.terminalRepository, this.settingsRepository);
+            await StandardNotificationLogClient.UpdateGraph(this.notificationLogBaseUrl, avatarId, position, this.neuronRepository, this.terminalRepository, this.settingsRepository);
 
             if (!this.polling)
             {
-                StandardNotificationLogClient.logger.Info($"[Avatar: {this.avatarId}] Polling started...");
+                StandardNotificationLogClient.logger.Info($"[Avatar: {avatarId}] Polling started...");
                 this.polling = true;
                 while (this.polling)
                 {
                     await Task.Delay(this.pollInterval);
-                    StandardNotificationLogClient.logger.Info($"[Avatar: {this.avatarId}] Polling subscription update...");
+                    StandardNotificationLogClient.logger.Info($"[Avatar: {avatarId}] Polling subscription update...");
                     var s = await this.settingsRepository.Get(Guid.Empty);
-                    await StandardNotificationLogClient.UpdateGraph(this.avatarId, s == null ? "0" : s.LastPosition, this.neuronRepository, this.terminalRepository, this.settingsRepository);
+                    await StandardNotificationLogClient.UpdateGraph(this.notificationLogBaseUrl, avatarId, s == null ? "0" : s.LastPosition, this.neuronRepository, this.terminalRepository, this.settingsRepository);
                 }
             }
         }
 
-        private async static Task UpdateGraph(string avatarId, string position, IRepository<Neuron> neuronRepository, IRepository<Terminal> terminalRepository, IRepository<Settings> settingsRepository)
+        private async static Task UpdateGraph(string notificationLogBaseUrl, string avatarId, string position, IRepository<Neuron> neuronRepository, IRepository<Terminal> terminalRepository, IRepository<Settings> settingsRepository)
         {
             AssertionConcern.AssertStateTrue(long.TryParse(position, out long lastPosition), $"[Avatar: {avatarId}] Specified position value of '{position}' is not a valid integer (long).");
             AssertionConcern.AssertMinimum(lastPosition, 0, nameof(position));
 
+            var notificationClient = new HttpNotificationClient(Url.Combine(notificationLogBaseUrl, avatarId));
             // get current log
-            var currentNotificationLog = await StandardNotificationLogClient.GetNotificationLog(avatarId, string.Empty);
+            var currentNotificationLog = await notificationClient.GetNotificationLog(string.Empty);
             NotificationLog processingEventInfoLog = null;
 
             if (lastPosition == StandardNotificationLogClient.StartPosition)
                 // get first log from current
-                processingEventInfoLog = await StandardNotificationLogClient.GetNotificationLog(avatarId, currentNotificationLog.FirstNotificationLogId);
+                processingEventInfoLog = await notificationClient.GetNotificationLog(currentNotificationLog.FirstNotificationLogId);
             else
             {
                 processingEventInfoLog = currentNotificationLog;
                 while (lastPosition < processingEventInfoLog.DecodedNotificationLogId.Low)
-                    processingEventInfoLog = await StandardNotificationLogClient.GetNotificationLog(avatarId, processingEventInfoLog.PreviousNotificationLogId);
+                    processingEventInfoLog = await notificationClient.GetNotificationLog(processingEventInfoLog.PreviousNotificationLogId);
             }
 
             // while processing logid is not equal to newly retrieved currenteventinfolog
@@ -120,86 +109,37 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Standard
                     }
 
                 if (processingEventInfoLog.HasNextNotificationLog)
-                    processingEventInfoLog = await StandardNotificationLogClient.GetNotificationLog(avatarId, processingEventInfoLog.NextNotificationLogId);
+                    processingEventInfoLog = await notificationClient.GetNotificationLog(processingEventInfoLog.NextNotificationLogId);
                 else
                     break;
             }
         }
 
-        private static async Task<NotificationLog> GetNotificationLog(string avatarId, string destinationLogId)
+        public async Task Regenerate(string avatarId)
         {
-            var response = await StandardNotificationLogClient.httpClient.GetAsync(
-                string.Format(StandardNotificationLogClient.getEventsPathTemplate, avatarId, destinationLogId)
-                ).ConfigureAwait(false);
-
-            response.EnsureSuccessStatusCode();
-            var eventInfoItems = JsonConvert.DeserializeObject<Notification[]>(
-                await response.Content.ReadAsStringAsync().ConfigureAwait(false)
-                );
-            var linkHeader = response.Headers.GetValues(Response.Header.Link.Key).First();
-
-            AssertionConcern.AssertStateTrue(linkHeader != null, "'Link' header is missing in server response.");
-
-            NotificationLogId.TryParse(
-                StandardNotificationLogClient.GetLogId(linkHeader, Response.Header.Link.Relation.Self),
-                out NotificationLogId selfLogId
-                );
-            NotificationLogId.TryParse(
-                StandardNotificationLogClient.GetLogId(linkHeader, Response.Header.Link.Relation.First),
-                out NotificationLogId firstLogId
-                );
-            NotificationLogId.TryParse(
-                StandardNotificationLogClient.GetLogId(linkHeader, Response.Header.Link.Relation.Next),
-                out NotificationLogId nextLogId
-                );
-            NotificationLogId.TryParse(
-                StandardNotificationLogClient.GetLogId(linkHeader, Response.Header.Link.Relation.Previous),
-                out NotificationLogId previousLogId
-                );
-            return new NotificationLog(
-                selfLogId,
-                firstLogId,
-                nextLogId,
-                previousLogId,
-                eventInfoItems,
-                nextLogId != null
-                );
-        }
-
-        private static string GetLogId(string linkHeader, Response.Header.Link.Relation relation)
-        {
-            string result = string.Empty;
-            if (ResponseHelper.Header.Link.TryGet(linkHeader, relation, out string link))
-            {
-                link = link.TrimEnd('/');
-                result = link.Substring(link.LastIndexOf('/') + 1);
-            }
-            return result;
-        }
-
-        public async Task Regenerate()
-        {
-            AssertionConcern.AssertStateTrue(!string.IsNullOrEmpty(this.avatarId), "AvatarId has not been initialized.");
-            await StandardNotificationLogClient.InitializeRepositories(this.avatarId, this.neuronRepository, this.terminalRepository, this.settingsRepository);
+            AssertionConcern.AssertArgumentNotNull(avatarId, nameof(avatarId));
+            AssertionConcern.AssertArgumentNotEmpty(avatarId, "Specified avatarId was empty.", nameof(avatarId));
+            await StandardNotificationLogClient.InitializeRepositories(avatarId, this.neuronRepository, this.terminalRepository, this.settingsRepository);
 
             await this.terminalRepository.Clear();
             await this.neuronRepository.Clear();
             await this.settingsRepository.Clear();
 
-            await this.Subscribe(StandardNotificationLogClient.StartPosition.ToString());
+            await this.Subscribe(avatarId, StandardNotificationLogClient.StartPosition.ToString());
         }
 
-        public async Task ResumeGeneration()
+        public async Task ResumeGeneration(string avatarId)
         {
-            AssertionConcern.AssertStateTrue(!string.IsNullOrEmpty(this.avatarId), "AvatarId has not been initialized.");
-            await StandardNotificationLogClient.InitializeRepositories(this.avatarId, this.neuronRepository, this.terminalRepository, this.settingsRepository);
+            AssertionConcern.AssertArgumentNotNull(avatarId, nameof(avatarId));
+            AssertionConcern.AssertArgumentNotEmpty(avatarId, "Specified avatarId was empty.", nameof(avatarId));
+            await StandardNotificationLogClient.InitializeRepositories(avatarId, this.neuronRepository, this.terminalRepository, this.settingsRepository);
 
             var s = await this.settingsRepository.Get(Guid.Empty);
 
             if (s == null)
-                await this.Regenerate();
+                await this.Regenerate(avatarId);
             else
-                await this.Subscribe(s.LastPosition);
+                await this.Subscribe(avatarId, s.LastPosition);
         }
 
         private async static Task InitializeRepositories(string avatarId, IRepository<Neuron> neuronRepository, IRepository<Terminal> terminalRepository, IRepository<Settings> settingsRepository)
@@ -209,19 +149,13 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Standard
             await settingsRepository.Initialize(avatarId);
         }
 
-        public Task Stop()
-        {
-            this.polling = false;
-            StandardNotificationLogClient.logger.Info($"[Avatar: {this.avatarId}] Processing stopped.");
-            return Task.CompletedTask;
-        }
-
-        public void Initialize(string avatarId)
+        public Task Stop(string avatarId)
         {
             AssertionConcern.AssertArgumentNotNull(avatarId, nameof(avatarId));
             AssertionConcern.AssertArgumentNotEmpty(avatarId, "Specified avatarId was empty.", nameof(avatarId));
-
-            this.avatarId = avatarId;
+            this.polling = false;
+            StandardNotificationLogClient.logger.Info($"[Avatar: {avatarId}] Processing stopped.");
+            return Task.CompletedTask;
         }
     }
 }

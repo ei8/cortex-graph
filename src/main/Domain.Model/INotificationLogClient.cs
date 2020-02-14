@@ -11,12 +11,10 @@ namespace works.ei8.Cortex.Graph.Domain.Model
     /// </summary>
     public interface INotificationLogClient
     {
-        void Initialize(string avatarId);
+        Task Regenerate(string avatarId);
 
-        Task Regenerate();
+        Task ResumeGeneration(string avatarId);
 
-        Task ResumeGeneration();
-
-        Task Stop();
+        Task Stop(string avatarId);
     }
 }

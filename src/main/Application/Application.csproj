@@ -7,6 +7,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="ei8.Cortex.Graph.Common" Version="0.1.2" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Domain.Model\Domain.Model.csproj" />
   </ItemGroup>
 

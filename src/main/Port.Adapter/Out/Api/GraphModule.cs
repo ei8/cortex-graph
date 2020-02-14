@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using works.ei8.Cortex.Graph.Application;
+using works.ei8.Cortex.Graph.Common;
 using works.ei8.Cortex.Graph.Domain.Model;
 using works.ei8.Cortex.Graph.Port.Adapter.Common;
 
@@ -19,9 +20,6 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.Out.Api
 
         public GraphModule(INeuronQueryService queryService) : base("/{avatarId}/cortex/graph")
         {
-            if (bool.TryParse(Environment.GetEnvironmentVariable(EnvironmentVariableKeys.RequireAuthentication), out bool value) && value)
-                this.RequiresAuthentication();
-
             this.Get("/neurons", async (parameters) =>
             {
                 return await GraphModule.ProcessRequest(async () =>
@@ -56,7 +54,7 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.Out.Api
                         var nv = await queryService.GetNeurons(
                             parameters.avatarId,
                             parameters.centralid,
-                            Enum.Parse(typeof(Application.Data.RelativeType), type),
+                            Enum.Parse(typeof(RelativeType), type),
                             GraphModule.ExtractQuery(this.Request.Query),
                             int.Parse(limit)
                             );
@@ -77,7 +75,7 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.Out.Api
                             parameters.avatarId,
                             parameters.neuronid,
                             parameters.centralid,
-                            Enum.Parse(typeof(Application.Data.RelativeType), type)
+                            Enum.Parse(typeof(RelativeType), type)
                             );
                         return new TextResponse(JsonConvert.SerializeObject(nv));
                     }

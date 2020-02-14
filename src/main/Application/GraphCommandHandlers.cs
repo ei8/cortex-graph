@@ -27,19 +27,18 @@ namespace works.ei8.Cortex.Graph.Application
             if (this.clientCache.ContainsKey(message.AvatarId))
             {
                 logClient = this.clientCache[message.AvatarId];
-                await logClient.Stop();
+                await logClient.Stop(message.AvatarId);
             }
             else
                 logClient = GraphCommandHandlers.CreateNotificationLog(message.AvatarId, this.notificationLogCreator, this.clientCache);
 
-            await logClient.Regenerate();
+            await logClient.Regenerate(message.AvatarId);
         }
 
         private static INotificationLogClient CreateNotificationLog(string avatarId, Func<INotificationLogClient> notificationLogCreator, 
             IDictionary<string, INotificationLogClient> clientCache)
         {
             var notificationLog = notificationLogCreator();
-            notificationLog.Initialize(avatarId);
             clientCache.Add(avatarId, notificationLog);
             return notificationLog;
         }
@@ -53,7 +52,7 @@ namespace works.ei8.Cortex.Graph.Application
                 message.AvatarId, 
                 this.notificationLogCreator, 
                 this.clientCache
-                ).ResumeGeneration();
+                ).ResumeGeneration(message.AvatarId);
         }
 
         // TODO: stop generation

@@ -10,11 +10,4 @@ namespace works.ei8.Cortex.Graph.Domain.Model
         NotSet = 0,
         Excite = 1
     }
-
-    public enum RelativeType
-    {
-        NotSet,
-        Postsynaptic,
-        Presynaptic
-    }
 }
