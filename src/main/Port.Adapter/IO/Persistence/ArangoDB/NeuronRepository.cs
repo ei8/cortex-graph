@@ -9,6 +9,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using works.ei8.Cortex.Graph.Common;
 using works.ei8.Cortex.Graph.Domain.Model;
+using Neuron = works.ei8.Cortex.Graph.Domain.Model.Neuron;
+using Terminal = works.ei8.Cortex.Graph.Domain.Model.Terminal;
 
 namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
 {
@@ -133,6 +135,7 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
 
         public async Task Initialize(string databaseName)
         {
+            // TODO: support prefix, obtain from config(?) to allow for usage across environments 
             await Helper.CreateDatabase(databaseName);
             this.databaseName = databaseName;
         }

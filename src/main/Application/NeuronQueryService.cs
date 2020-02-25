@@ -1,12 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using works.ei8.Cortex.Graph.Application.Data;
 using works.ei8.Cortex.Graph.Common;
 using works.ei8.Cortex.Graph.Domain.Model;
+using CommonNeuron = works.ei8.Cortex.Graph.Common.Neuron;
 
 namespace works.ei8.Cortex.Graph.Application
 {
@@ -19,7 +18,7 @@ namespace works.ei8.Cortex.Graph.Application
             this.neuronRepository = neuronRepository;
         }
 
-        public async Task<IEnumerable<NeuronData>> GetNeurons(string avatarId, string centralId = default(string), RelativeType type = RelativeType.NotSet, NeuronQuery neuronQuery = null, 
+        public async Task<IEnumerable<CommonNeuron>> GetNeurons(string avatarId, string centralId = default(string), RelativeType type = RelativeType.NotSet, NeuronQuery neuronQuery = null, 
             int? limit = 1000, CancellationToken token = default(CancellationToken))
         {
             await this.neuronRepository.Initialize(avatarId);
@@ -37,9 +36,9 @@ namespace works.ei8.Cortex.Graph.Application
             return (value == null ? (Guid?) null : Guid.Parse(value));
         }
 
-        public async Task<IEnumerable<NeuronData>> GetNeuronById(string avatarId, string id, string centralId = default(string), RelativeType type = RelativeType.NotSet, CancellationToken token = default(CancellationToken))
+        public async Task<IEnumerable<CommonNeuron>> GetNeuronById(string avatarId, string id, string centralId = default(string), RelativeType type = RelativeType.NotSet, CancellationToken token = default(CancellationToken))
         {
-            IEnumerable<NeuronData> result = null;
+            IEnumerable<CommonNeuron> result = null;
 
             await this.neuronRepository.Initialize(avatarId);
             result = (await this.neuronRepository.GetRelative(Guid.Parse(id), NeuronQueryService.GetNullableStringGuid(centralId), type))
@@ -48,15 +47,15 @@ namespace works.ei8.Cortex.Graph.Application
             return result;
         }
 
-        private NeuronData ConvertNeuronToData(NeuronResult nv, string centralId)
+        private CommonNeuron ConvertNeuronToData(NeuronResult nv, string centralId)
         {
-            NeuronData result = null;
+            CommonNeuron result = null;
 
             try
             {
                 if (nv.Neuron != null || nv.Terminal != null)
                 {
-                    result = new NeuronData();
+                    result = new CommonNeuron();
 
                     if (nv.Neuron?.Id != null)
                     {
@@ -81,15 +80,18 @@ namespace works.ei8.Cortex.Graph.Application
                             result.Errors = new string[] { $"Unable to find Neuron with ID '{nv.Terminal.PostsynapticNeuronId}'" };
                         }
 
-                        result.Terminal.Id = nv.Terminal.Id;
-                        result.Terminal.PresynapticNeuronId = nv.Terminal.PresynapticNeuronId;
-                        result.Terminal.PostsynapticNeuronId = nv.Terminal.PostsynapticNeuronId;
-                        result.Terminal.Effect = ((int)nv.Terminal.Effect).ToString();
-                        result.Terminal.Strength = nv.Terminal.Strength.ToString();
-                        result.Terminal.Version = nv.Terminal.Version;
-                        result.Terminal.Timestamp = nv.Terminal.Timestamp;
-                        result.Terminal.AuthorId = nv.Terminal.AuthorId;
-                        result.Terminal.AuthorTag = nv.TerminalAuthorTag;
+                        result.Terminal = new Common.Terminal()
+                        {
+                            Id = nv.Terminal.Id,
+                            PresynapticNeuronId = nv.Terminal.PresynapticNeuronId,
+                            PostsynapticNeuronId = nv.Terminal.PostsynapticNeuronId,
+                            Effect = ((int)nv.Terminal.Effect).ToString(),
+                            Strength = nv.Terminal.Strength.ToString(),
+                            Version = nv.Terminal.Version,
+                            Timestamp = nv.Terminal.Timestamp,
+                            AuthorId = nv.Terminal.AuthorId,
+                            AuthorTag = nv.TerminalAuthorTag
+                        };
                     }
                 }
             }
