@@ -69,7 +69,7 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Standard
             AssertionConcern.AssertStateTrue(long.TryParse(position, out long lastPosition), $"[Avatar: {avatarId}] Specified position value of '{position}' is not a valid integer (long).");
             AssertionConcern.AssertMinimum(lastPosition, 0, nameof(position));
 
-            var notificationClient = new HttpNotificationClient(Url.Combine(notificationLogBaseUrl, avatarId));
+            var notificationClient = new HttpNotificationClient(Url.Combine(notificationLogBaseUrl, avatarId) + "/");
             // get current log
             var currentNotificationLog = await notificationClient.GetNotificationLog(string.Empty);
             NotificationLog processingEventInfoLog = null;
@@ -94,7 +94,7 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Standard
 
                         StandardNotificationLogClient.logger.Info($"[Avatar: {avatarId}] Processing event '{eventName}' with Sequence Id-{e.SequenceId.ToString()} for Neuron '{e.Id}");
 
-                        if (await new EventDataProcessor().Process(neuronRepository, terminalRepository, eventName, e.Data))
+                        if (await new EventDataProcessor().Process(neuronRepository, terminalRepository, eventName, e.Data, e.AuthorId))
                         {
                             // update current position
                             lastPosition = e.SequenceId;

@@ -9,7 +9,7 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events
 {
     public class EventDataProcessor
     {
-        public async Task<bool> Process(IRepository<Neuron> repository, IRepository<Terminal> terminalRepository, string eventName, string data)
+        public async Task<bool> Process(IRepository<Neuron> repository, IRepository<Terminal> terminalRepository, string eventName, string data, string authorId)
         {
             bool result = false;
 
@@ -22,11 +22,11 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events
                     n = new Neuron()
                     {
                         Id = JsonHelper.GetRequiredValue<string>(jd, nameof(Neuron.Id)),
-                        Tag = JsonHelper.GetRequiredValue<string>(jd, nameof(Neuron.Tag)),
+                        // TODO: Tag = JsonHelper.GetRequiredValue<string>(jd, nameof(Neuron.Tag)),
                         Version = JsonHelper.GetRequiredValue<int>(jd, nameof(Neuron.Version)),
                         Timestamp = JsonHelper.GetRequiredValue<string>(jd, nameof(Neuron.Timestamp)),
-                        LayerId = JsonHelper.GetRequiredValue<string>(jd, nameof(Neuron.LayerId)),
-                        AuthorId = JsonHelper.GetRequiredValue<string>(jd, nameof(Neuron.AuthorId))
+                        // TODO: LayerId = JsonHelper.GetRequiredValue<string>(jd, nameof(Neuron.LayerId)),
+                        AuthorId = authorId
                     };
                     await repository.Save(n);
                     result = true;
@@ -61,7 +61,7 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events
                     {
                         Version = JsonHelper.GetRequiredValue<int>(jd, nameof(Terminal.Version)),
                         Timestamp = JsonHelper.GetRequiredValue<string>(jd, nameof(Terminal.Timestamp)),
-                        AuthorId = JsonHelper.GetRequiredValue<string>(jd, nameof(Terminal.AuthorId))
+                        AuthorId = authorId
                     };
                     await terminalRepository.Save(t);
                     result = true;

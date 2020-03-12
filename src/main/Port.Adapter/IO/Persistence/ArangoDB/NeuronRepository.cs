@@ -74,7 +74,7 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
                 if (!centralGuid.HasValue)
                 {
                     var n = await db.DocumentAsync<Neuron>(guid.ToString());
-                    var layer = await db.DocumentAsync<Neuron>(n.LayerId);
+                    var layer = n.LayerId != null ? await db.DocumentAsync<Neuron>(n.LayerId) : null;
                     result = new NeuronResult[] { new NeuronResult() {
                         Neuron = n,
                         NeuronAuthorTag = (await db.DocumentAsync<Neuron>(n.AuthorId)).Tag,
