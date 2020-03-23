@@ -40,6 +40,7 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.In.Api
             container.Register<IRepository<Neuron>, NeuronRepository>();
             container.Register<IRepository<Terminal>, TerminalRepository>();
             container.Register<IRepository<Domain.Model.Settings>, SettingsRepository>();
+            // TODO: Use ISettingsService
             container.Register<Func<INotificationLogClient>>(() => {
                 return new StandardNotificationLogClient(
                         Environment.GetEnvironmentVariable(EnvironmentVariableKeys.EventInfoLogBaseUrl),

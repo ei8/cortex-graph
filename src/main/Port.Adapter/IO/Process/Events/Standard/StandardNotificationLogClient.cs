@@ -69,19 +69,20 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Standard
             AssertionConcern.AssertStateTrue(long.TryParse(position, out long lastPosition), $"[Avatar: {avatarId}] Specified position value of '{position}' is not a valid integer (long).");
             AssertionConcern.AssertMinimum(lastPosition, 0, nameof(position));
 
-            var notificationClient = new HttpNotificationClient(Url.Combine(notificationLogBaseUrl, avatarId) + "/");
+            var eventSourcingAvatarUrl = Url.Combine(notificationLogBaseUrl, avatarId) + "/";
+            var notificationClient = new HttpNotificationClient();
             // get current log
-            var currentNotificationLog = await notificationClient.GetNotificationLog(string.Empty);
+            var currentNotificationLog = await notificationClient.GetNotificationLog(eventSourcingAvatarUrl, string.Empty);
             NotificationLog processingEventInfoLog = null;
 
             if (lastPosition == StandardNotificationLogClient.StartPosition)
                 // get first log from current
-                processingEventInfoLog = await notificationClient.GetNotificationLog(currentNotificationLog.FirstNotificationLogId);
+                processingEventInfoLog = await notificationClient.GetNotificationLog(eventSourcingAvatarUrl, currentNotificationLog.FirstNotificationLogId);
             else
             {
                 processingEventInfoLog = currentNotificationLog;
                 while (lastPosition < processingEventInfoLog.DecodedNotificationLogId.Low)
-                    processingEventInfoLog = await notificationClient.GetNotificationLog(processingEventInfoLog.PreviousNotificationLogId);
+                    processingEventInfoLog = await notificationClient.GetNotificationLog(eventSourcingAvatarUrl, processingEventInfoLog.PreviousNotificationLogId);
             }
 
             // while processing logid is not equal to newly retrieved currenteventinfolog
@@ -109,7 +110,7 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Standard
                     }
 
                 if (processingEventInfoLog.HasNextNotificationLog)
-                    processingEventInfoLog = await notificationClient.GetNotificationLog(processingEventInfoLog.NextNotificationLogId);
+                    processingEventInfoLog = await notificationClient.GetNotificationLog(eventSourcingAvatarUrl, processingEventInfoLog.NextNotificationLogId);
                 else
                     break;
             }
