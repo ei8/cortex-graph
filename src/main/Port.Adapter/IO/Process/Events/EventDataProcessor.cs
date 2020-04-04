@@ -21,30 +21,29 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events
                 case "NeuronCreated":
                     n = new Neuron()
                     {
-                        Id = JsonHelper.GetRequiredValue<string>(jd, nameof(Neuron.Id)),
-                        // TODO: Tag = JsonHelper.GetRequiredValue<string>(jd, nameof(Neuron.Tag)),
-                        Version = JsonHelper.GetRequiredValue<int>(jd, nameof(Neuron.Version)),
-                        Timestamp = JsonHelper.GetRequiredValue<string>(jd, nameof(Neuron.Timestamp)),
+                        Id = JsonHelper.GetRequiredValue<string>(jd, nameof(EventDataFields.Neuron.NeuronCreated.Id)),
+                        Version = JsonHelper.GetRequiredValue<int>(jd, nameof(EventDataFields.Neuron.NeuronCreated.Version)),
+                        Timestamp = JsonHelper.GetRequiredValue<string>(jd, nameof(EventDataFields.Neuron.NeuronCreated.Timestamp)),
                         // TODO: LayerId = JsonHelper.GetRequiredValue<string>(jd, nameof(Neuron.LayerId)),
                         AuthorId = authorId
                     };
                     await repository.Save(n);
                     result = true;
                     break;
-                case "NeuronTagChanged":
+                case "TagChanged":
                     n = await repository.Get(Guid.Parse(
-                        JsonHelper.GetRequiredValue<string>(jd, nameof(Neuron.Id))
+                        JsonHelper.GetRequiredValue<string>(jd, nameof(EventDataFields.Tag.TagChanged.Id))
                         ));
-                    n.Tag = JsonHelper.GetRequiredValue<string>(jd, nameof(Neuron.Tag));
-                    n.Version = JsonHelper.GetRequiredValue<int>(jd, nameof(Neuron.Version));
-                    n.Timestamp = JsonHelper.GetRequiredValue<string>(jd, nameof(Neuron.Timestamp));
-                    n.AuthorId = JsonHelper.GetRequiredValue<string>(jd, nameof(Neuron.AuthorId));
+                    n.Tag = JsonHelper.GetRequiredValue<string>(jd, nameof(EventDataFields.Tag.TagChanged.Tag));
+                    n.Version = JsonHelper.GetRequiredValue<int>(jd, nameof(EventDataFields.Tag.TagChanged.Version));
+                    n.Timestamp = JsonHelper.GetRequiredValue<string>(jd, nameof(EventDataFields.Tag.TagChanged.Timestamp));
+                    n.AuthorId = authorId;
                     await repository.Save(n);
                     result = true;
                     break;
                 case "NeuronDeactivated":
                     n = await repository.Get(Guid.Parse(
-                        JsonHelper.GetRequiredValue<string>(jd, nameof(Neuron.Id))
+                        JsonHelper.GetRequiredValue<string>(jd, nameof(EventDataFields.Neuron.NeuronDeactivated.Id))
                     ));
                     // TODO: don't remove, just change Active value to false?
                     await repository.Remove(n);
@@ -52,15 +51,15 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events
                     break;
                 case "TerminalCreated":
                     t = new Terminal(
-                                JsonHelper.GetRequiredValue<string>(jd, nameof(Terminal.Id)),
-                                JsonHelper.GetRequiredValue<string>(jd, nameof(Terminal.PresynapticNeuronId)),
-                                JsonHelper.GetRequiredValue<string>(jd, nameof(Terminal.PostsynapticNeuronId)),
-                                (NeurotransmitterEffect)Enum.Parse(typeof(NeurotransmitterEffect), JsonHelper.GetRequiredValue<string>(jd, nameof(Terminal.Effect))),
-                                JsonHelper.GetRequiredValue<float>(jd, nameof(Terminal.Strength))
+                                JsonHelper.GetRequiredValue<string>(jd, nameof(EventDataFields.Terminal.TerminalCreated.Id)),
+                                JsonHelper.GetRequiredValue<string>(jd, nameof(EventDataFields.Terminal.TerminalCreated.PresynapticNeuronId)),
+                                JsonHelper.GetRequiredValue<string>(jd, nameof(EventDataFields.Terminal.TerminalCreated.PostsynapticNeuronId)),
+                                (NeurotransmitterEffect)Enum.Parse(typeof(NeurotransmitterEffect), JsonHelper.GetRequiredValue<string>(jd, nameof(EventDataFields.Terminal.TerminalCreated.Effect))),
+                                JsonHelper.GetRequiredValue<float>(jd, nameof(EventDataFields.Terminal.TerminalCreated.Strength))
                             )
                     {
-                        Version = JsonHelper.GetRequiredValue<int>(jd, nameof(Terminal.Version)),
-                        Timestamp = JsonHelper.GetRequiredValue<string>(jd, nameof(Terminal.Timestamp)),
+                        Version = JsonHelper.GetRequiredValue<int>(jd, nameof(EventDataFields.Terminal.TerminalCreated.Version)),
+                        Timestamp = JsonHelper.GetRequiredValue<string>(jd, nameof(EventDataFields.Terminal.TerminalCreated.Timestamp)),
                         AuthorId = authorId
                     };
                     await terminalRepository.Save(t);
@@ -68,7 +67,7 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events
                     break;
                 case "TerminalDeactivated":
                     t = await terminalRepository.Get(Guid.Parse(
-                        JsonHelper.GetRequiredValue<string>(jd, nameof(Terminal.Id))
+                        JsonHelper.GetRequiredValue<string>(jd, nameof(EventDataFields.Terminal.TerminalDeactivated.Id))
                     ));
                     // TODO: don't remove, just change Active value to false?
                     await terminalRepository.Remove(t);

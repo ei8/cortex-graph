@@ -24,7 +24,9 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.In.Api
                 }
                 catch (Exception ex)
                 {
-                    GraphModule.logger.Error(ex, $"An error occurred during graph regeneration: {ex.Message}; Stack Trace: {ex.StackTrace}");
+                    var error = $"An error occurred during graph regeneration: {ex.Message}; Stack Trace: {ex.StackTrace}";
+                    GraphModule.logger.Error(ex, error);
+                    result = new Response { StatusCode = HttpStatusCode.InternalServerError };
                 }
 
                 return result;
@@ -44,6 +46,7 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.In.Api
                 catch (Exception ex)
                 {
                     GraphModule.logger.Error(ex, $"An error occurred while resuming graph generation: {ex.Message}; Stack Trace: {ex.StackTrace}");
+                    result = new Response { StatusCode = HttpStatusCode.InternalServerError };
                 }
 
                 return result;
