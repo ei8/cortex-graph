@@ -16,7 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Neurul.Common" Version="0.1.15" />
+    <PackageReference Include="Neurul.Common" Version="0.1.17" />
   </ItemGroup>
 
   <ItemGroup>

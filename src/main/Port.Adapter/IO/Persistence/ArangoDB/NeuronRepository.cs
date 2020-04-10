@@ -74,11 +74,11 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
                 if (!centralGuid.HasValue)
                 {
                     var n = await db.DocumentAsync<Neuron>(guid.ToString());
-                    var layer = n.LayerId != null ? await db.DocumentAsync<Neuron>(n.LayerId) : null;
+                    var region = n.RegionId != null ? await db.DocumentAsync<Neuron>(n.RegionId) : null;
                     result = new NeuronResult[] { new NeuronResult() {
                         Neuron = n,
                         NeuronAuthorTag = (await db.DocumentAsync<Neuron>(n.AuthorId)).Tag,
-                        LayerTag = layer != null ? layer.Tag : string.Empty
+                        RegionTag = region != null ? region.Tag : string.Empty
                     }
                     };
                 }
@@ -172,25 +172,25 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
             // IdEqualsNot
             NeuronRepository.ExtractIdFilters(neuronQuery?.IdNot, nameof(NeuronQuery.IdNot), queryParameters, queryFiltersBuilder, "||", "NOT");
 
-            var neuronAuthorLayer = @"
+            var neuronAuthorRegion = @"
                         LET neuronAuthorTag = (
                             FOR neuronAuthorNeuron in Neuron
                             FILTER neuronAuthorNeuron._id == CONCAT(""Neuron/"", n.AuthorId)
                             return neuronAuthorNeuron.Tag
                         )
-                        LET layerTag = (
-                            FOR layerNeuron in Neuron
-                            FILTER layerNeuron._id == CONCAT(""Neuron/"", n.LayerId)
-                            return layerNeuron.Tag
+                        LET regionTag = (
+                            FOR regionNeuron in Neuron
+                            FILTER regionNeuron._id == CONCAT(""Neuron/"", n.RegionId)
+                            return regionNeuron.Tag
                         )";
-            var neuronAuthorLayerReturn = ", NeuronAuthorTag: FIRST(neuronAuthorTag), LayerTag: FIRST(layerTag)";
+            var neuronAuthorRegionReturn = ", NeuronAuthorTag: FIRST(neuronAuthorTag), RegionTag: FIRST(regionTag)";
             if (!centralGuid.HasValue)
             {
                 queryStringBuilder.Append($@"
                     FOR n IN Neuron
                         {queryFiltersBuilder}
-                        {neuronAuthorLayer}
-                            RETURN {{ Neuron: n, Terminal: {{}}{neuronAuthorLayerReturn} }}");
+                        {neuronAuthorRegion}
+                            RETURN {{ Neuron: n, Terminal: {{}}{neuronAuthorRegionReturn} }}");
             }
             else
             {
@@ -228,10 +228,10 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
                             FILTER terminalAuthorNeuron._id == CONCAT(""Neuron/"", t.AuthorId)
                             return terminalAuthorNeuron.Tag
                         )
-                        {neuronAuthorLayer}
+                        {neuronAuthorRegion}
                         FILTER {filterPost} {(!string.IsNullOrEmpty(filterPost) && !string.IsNullOrEmpty(filterPre) ? "||" : string.Empty)} {filterPre}
                         {queryFiltersBuilder}
-                            RETURN {{ Neuron: n, Terminal: t, TerminalAuthorTag: FIRST(terminalAuthorTag){neuronAuthorLayerReturn}}}");
+                            RETURN {{ Neuron: n, Terminal: t, TerminalAuthorTag: FIRST(terminalAuthorTag){neuronAuthorRegionReturn}}}");
                 queryParameters.Add(new QueryParameter() { Name = nameof(centralGuid), Value = $"Neuron/{centralGuid.Value.ToString()}" });
             }
 

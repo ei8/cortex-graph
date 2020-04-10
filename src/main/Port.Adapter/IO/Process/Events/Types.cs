@@ -54,5 +54,16 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events
                 Timestamp
             }
         }
+
+        public struct Aggregate
+        {
+            public enum AggregateChanged
+            {
+                Id,
+                Aggregate,
+                Version,
+                Timestamp
+            }
+        }
     }
 }

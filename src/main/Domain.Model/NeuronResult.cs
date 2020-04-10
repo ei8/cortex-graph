@@ -18,6 +18,6 @@ namespace works.ei8.Cortex.Graph.Domain.Model
 
         public string TerminalAuthorTag { get; set; }
 
-        public string LayerTag { get; set; }
+        public string RegionTag { get; set; }
     }
 }

@@ -24,7 +24,6 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events
                         Id = JsonHelper.GetRequiredValue<string>(jd, nameof(EventDataFields.Neuron.NeuronCreated.Id)),
                         Version = JsonHelper.GetRequiredValue<int>(jd, nameof(EventDataFields.Neuron.NeuronCreated.Version)),
                         Timestamp = JsonHelper.GetRequiredValue<string>(jd, nameof(EventDataFields.Neuron.NeuronCreated.Timestamp)),
-                        // TODO: LayerId = JsonHelper.GetRequiredValue<string>(jd, nameof(Neuron.LayerId)),
                         AuthorId = authorId
                     };
                     await repository.Save(n);
@@ -37,6 +36,17 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events
                     n.Tag = JsonHelper.GetRequiredValue<string>(jd, nameof(EventDataFields.Tag.TagChanged.Tag));
                     n.Version = JsonHelper.GetRequiredValue<int>(jd, nameof(EventDataFields.Tag.TagChanged.Version));
                     n.Timestamp = JsonHelper.GetRequiredValue<string>(jd, nameof(EventDataFields.Tag.TagChanged.Timestamp));
+                    n.AuthorId = authorId;
+                    await repository.Save(n);
+                    result = true;
+                    break;
+                case "AggregateChanged":
+                    n = await repository.Get(Guid.Parse(
+                        JsonHelper.GetRequiredValue<string>(jd, nameof(EventDataFields.Aggregate.AggregateChanged.Id))
+                        ));
+                    n.RegionId = JsonHelper.GetRequiredValue<string>(jd, nameof(EventDataFields.Aggregate.AggregateChanged.Aggregate));
+                    n.Version = JsonHelper.GetRequiredValue<int>(jd, nameof(EventDataFields.Aggregate.AggregateChanged.Version));
+                    n.Timestamp = JsonHelper.GetRequiredValue<string>(jd, nameof(EventDataFields.Aggregate.AggregateChanged.Timestamp));
                     n.AuthorId = authorId;
                     await repository.Save(n);
                     result = true;

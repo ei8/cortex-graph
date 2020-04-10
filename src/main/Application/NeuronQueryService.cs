@@ -65,8 +65,8 @@ namespace works.ei8.Cortex.Graph.Application
                         result.Version = nv.Neuron.Version;
                         result.AuthorId = nv.Neuron.AuthorId;
                         result.AuthorTag = nv.NeuronAuthorTag;
-                        result.LayerId = nv.Neuron.LayerId;
-                        result.LayerTag = nv.LayerTag;
+                        result.RegionId = nv.Neuron.RegionId;
+                        result.RegionTag = nv.RegionTag;
                     }
 
                     if (nv.Terminal?.Id != null)
