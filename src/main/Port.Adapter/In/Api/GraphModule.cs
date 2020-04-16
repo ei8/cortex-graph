@@ -10,7 +10,7 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.In.Api
     {
         private static readonly Logger logger = LogManager.GetCurrentClassLogger();
 
-        public GraphModule(ICommandSender commandSender) : base("/{avatarId}/cortex/graph")
+        public GraphModule(ICommandSender commandSender) : base("/cortex/graph")
         {
             this.Post("/regenerate", async (parameters) =>
             {
@@ -18,7 +18,7 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.In.Api
 
                 try
                 {
-                    var command = new Regenerate(parameters.avatarId);
+                    var command = new Regenerate();
                     await commandSender.Send(command);
                     result = new Response { StatusCode = HttpStatusCode.OK };
                 }
@@ -39,7 +39,7 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.In.Api
 
                 try
                 {
-                    var command = new ResumeGeneration(parameters.avatarId);
+                    var command = new ResumeGeneration();
                     await commandSender.Send(command);
                     result = new Response { StatusCode = HttpStatusCode.OK };
                 }

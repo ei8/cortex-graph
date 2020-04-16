@@ -1,14 +1,14 @@
 version: '3.4'
 
 services:
-  in.api:
+  cortex-graph.in.api:
     env_file: 
       - ./var1.env
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
     ports:
       - "60040:80"
-  out.api:
+  cortex-graph.out.api:
     env_file: 
       - ./var1.env
     environment:

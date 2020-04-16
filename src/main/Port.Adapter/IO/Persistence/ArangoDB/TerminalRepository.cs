@@ -3,6 +3,7 @@ using org.neurul.Common.Domain.Model;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using works.ei8.Cortex.Graph.Application;
 using works.ei8.Cortex.Graph.Domain.Model;
 
 namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
@@ -10,11 +11,17 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
     public class TerminalRepository : IRepository<Terminal>
     {
         private const string EdgePrefix = nameof(Neuron) + "/";
-        private string databaseName;
+
+        private readonly ISettingsService settingsService;
+
+        public TerminalRepository(ISettingsService settingsService)
+        {
+            this.settingsService = settingsService;
+        }
 
         public async Task Clear()
         {
-            using (var db = ArangoDatabase.CreateWithSetting(this.databaseName))
+            using (var db = ArangoDatabase.CreateWithSetting(this.settingsService.DatabaseName))
             {
                 await Helper.Clear(db, nameof(Terminal), CollectionType.Edge);
             }
@@ -24,7 +31,7 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
         {
             Terminal result = null;
 
-            using (var db = ArangoDatabase.CreateWithSetting(this.databaseName))
+            using (var db = ArangoDatabase.CreateWithSetting(this.settingsService.DatabaseName))
             {
                 AssertionConcern.AssertStateTrue(await Helper.GraphExists(db), Constants.Messages.Error.GraphNotInitialized);
                 var x = await db.DocumentAsync<Terminal>(guid.ToString());
@@ -40,15 +47,14 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
             return result;
         }
 
-        public async Task Initialize(string databaseName)
+        public async Task Initialize()
         {
-            await Helper.CreateDatabase(databaseName);
-            this.databaseName = databaseName;
+            await Helper.CreateDatabase(this.settingsService);
         }
 
         public async Task Remove(Terminal value, CancellationToken cancellationToken = default(CancellationToken))
         {
-            await Helper.Remove(value, nameof(Terminal), this.databaseName);
+            await Helper.Remove(value, nameof(Terminal), this.settingsService.DatabaseName);
         }
 
         public async Task Save(Terminal value, CancellationToken cancellationToken = default(CancellationToken))
@@ -57,7 +63,7 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
             value.PresynapticNeuronId = TerminalRepository.EdgePrefix + value.PresynapticNeuronId;
             value.PostsynapticNeuronId = TerminalRepository.EdgePrefix + value.PostsynapticNeuronId;
             
-            await Helper.Save(value, nameof(Terminal), this.databaseName);
+            await Helper.Save(value, nameof(Terminal), this.settingsService.DatabaseName);
         }
 
         // TODO: update to retrieve orphan terminals

@@ -40,6 +40,7 @@
     <ProjectReference Include="..\..\Common\Common.csproj" />
     <ProjectReference Include="..\..\IO\Persistence\ArangoDB\ArangoDB.csproj" />
     <ProjectReference Include="..\..\IO\Process\Events\Standard\Standard.csproj" />
+    <ProjectReference Include="..\..\IO\Process\Services\Services.csproj" />
   </ItemGroup>
 
   <ItemGroup>

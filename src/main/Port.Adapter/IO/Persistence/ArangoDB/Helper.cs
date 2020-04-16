@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using works.ei8.Cortex.Graph.Application;
 using works.ei8.Cortex.Graph.Port.Adapter.Common;
 
 namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
@@ -17,25 +18,22 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
             return (await db.ListGraphsAsync()).Any(a => a.Id == "_graphs/" + Constants.GraphName);
         }
 
-        internal async static Task CreateDatabase(string databaseName)
+        internal async static Task CreateDatabase(ISettingsService settingsService)
         {
             ArangoDatabase.ChangeSetting(
-                databaseName,
+                settingsService.DatabaseName,
                 s =>
                 {
-                    s.Database = databaseName;
-                    s.Url = Environment.GetEnvironmentVariable(EnvironmentVariableKeys.DbUrl);
-                    s.Credential = new System.Net.NetworkCredential(
-                        Environment.GetEnvironmentVariable(EnvironmentVariableKeys.DbUsername),
-                        Environment.GetEnvironmentVariable(EnvironmentVariableKeys.DbPassword)
-                        );
+                    s.Database = settingsService.DatabaseName;
+                    s.Url = settingsService.DbUrl;
+                    s.Credential = new System.Net.NetworkCredential(settingsService.DbUsername, settingsService.DbPassword);
                     s.SystemDatabaseCredential = s.Credential;
                 }
                 );
-            using (var db = ArangoDatabase.CreateWithSetting(databaseName))
+            using (var db = ArangoDatabase.CreateWithSetting(settingsService.DatabaseName))
             {
-                if (!(await db.ListDatabasesAsync()).Any(s => s == databaseName))
-                    await db.CreateDatabaseAsync(databaseName);
+                if (!(await db.ListDatabasesAsync()).Any(s => s == settingsService.DatabaseName))
+                    await db.CreateDatabaseAsync(settingsService.DatabaseName);
             }
         }
 

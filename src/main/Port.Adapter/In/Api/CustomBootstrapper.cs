@@ -10,6 +10,7 @@ using works.ei8.Cortex.Graph.Domain.Model;
 using works.ei8.Cortex.Graph.Port.Adapter.Common;
 using works.ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB;
 using works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Standard;
+using works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Services;
 
 namespace works.ei8.Cortex.Graph.Port.Adapter.In.Api
 {
@@ -22,6 +23,12 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.In.Api
         protected override void ConfigureRequestContainer(TinyIoCContainer container, NancyContext context)
         {
             base.ConfigureRequestContainer(container, context);
+
+            container.Register<ISettingsService, SettingsService>();
+            container.Register<IRepository<Neuron>, NeuronRepository>();
+            container.Register<IRepository<Terminal>, TerminalRepository>();
+            container.Register<IRepository<Domain.Model.Settings>, SettingsRepository>();
+            container.Register<INotificationLogClient, StandardNotificationLogClient>(); 
 
             var ipb = new Router();
             container.Register<ICommandSender, Router>(ipb);
@@ -36,21 +43,6 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.In.Api
             // As this is now per-request we could inject a request scoped
             // database "context" or other request scoped services.
             ((TinyIoCServiceLocator)container.Resolve<IServiceProvider>()).SetRequestContainer(container);
-
-            container.Register<IRepository<Neuron>, NeuronRepository>();
-            container.Register<IRepository<Terminal>, TerminalRepository>();
-            container.Register<IRepository<Domain.Model.Settings>, SettingsRepository>();
-            // TODO: Use ISettingsService
-            container.Register<Func<INotificationLogClient>>(() => {
-                return new StandardNotificationLogClient(
-                        Environment.GetEnvironmentVariable(EnvironmentVariableKeys.EventInfoLogBaseUrl),
-                        int.Parse(Environment.GetEnvironmentVariable(EnvironmentVariableKeys.PollInterval)),
-                        container.Resolve<IRepository<Domain.Model.Settings>>(),
-                        container.Resolve<IRepository<Neuron>>(),
-                        container.Resolve<IRepository<Terminal>>()
-                        );
-                    }
-                    );
         }
 
         protected override void ConfigureApplicationContainer(TinyIoCContainer container)

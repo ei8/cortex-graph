@@ -59,7 +59,7 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Test.EventDataPr
 
             protected override void When()
             {
-                Task.Run(() => this.sut.Process(this.repository.Object, this.terminalRepository.Object, this.EventName, this.Data)).Wait();
+                // TODO: Task.Run(() => this.sut.Process(this.repository.Object, this.terminalRepository.Object, this.EventName, this.Data)).Wait();
             }
 
             protected abstract Neuron GetNeuron(Guid id);

@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using works.ei8.Cortex.Graph.Application;
 using works.ei8.Cortex.Graph.Common;
 using works.ei8.Cortex.Graph.Domain.Model;
 using Neuron = works.ei8.Cortex.Graph.Domain.Model.Neuron;
@@ -17,15 +18,16 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
     public class NeuronRepository : INeuronRepository
     {       
         private const string InitialQueryFilters = "FILTER ";
-        private string databaseName;
+        private readonly ISettingsService settingsService;
 
-        public NeuronRepository()
-        {            
+        public NeuronRepository(ISettingsService settingsService)
+        {
+            this.settingsService = settingsService;
         }
 
         public async Task Clear()
         {
-            using (var db = ArangoDatabase.CreateWithSetting(this.databaseName))
+            using (var db = ArangoDatabase.CreateWithSetting(this.settingsService.DatabaseName))
             {
                 await Helper.Clear(db, nameof(Neuron));
 
@@ -67,7 +69,7 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
         {
             IEnumerable<NeuronResult> result = null;
 
-            using (var db = ArangoDatabase.CreateWithSetting(this.databaseName))
+            using (var db = ArangoDatabase.CreateWithSetting(this.settingsService.DatabaseName))
             {
                 AssertionConcern.AssertStateTrue(await Helper.GraphExists(db), Constants.Messages.Error.GraphNotInitialized);
 
@@ -84,7 +86,7 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
                 }
                 else
                 {
-                    var temp = NeuronRepository.GetNeuronResults(centralGuid.Value, this.databaseName, NeuronRepository.ConvertRelativeToDirection(type));
+                    var temp = NeuronRepository.GetNeuronResults(centralGuid.Value, this.settingsService.DatabaseName, NeuronRepository.ConvertRelativeToDirection(type));
                     // TODO: optimize by passing this into GetNeuronResults AQL
                     result = temp.Where(nr =>
                         (nr.Neuron != null && nr.Neuron.Id == guid.ToString()) ||
@@ -125,19 +127,17 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
 
         public async Task Remove(Neuron value, CancellationToken token = default(CancellationToken))
         {
-            await Helper.Remove(value, nameof(Neuron), this.databaseName);
+            await Helper.Remove(value, nameof(Neuron), this.settingsService.DatabaseName);
         }
 
         public async Task Save(Neuron value, CancellationToken token = default(CancellationToken))
         {
-            await Helper.Save(value, nameof(Neuron), this.databaseName);
+            await Helper.Save(value, nameof(Neuron), this.settingsService.DatabaseName);
         }
 
-        public async Task Initialize(string databaseName)
+        public async Task Initialize()
         {
-            // TODO: support prefix, obtain from config(?) to allow for usage across environments 
-            await Helper.CreateDatabase(databaseName);
-            this.databaseName = databaseName;
+            await Helper.CreateDatabase(this.settingsService);
         }
 
         public async Task<IEnumerable<NeuronResult>> GetAll(Guid? centralGuid = null, RelativeType type = RelativeType.NotSet, NeuronQuery neuronQuery = null, int? limit = 1000, CancellationToken token = default(CancellationToken))
@@ -146,7 +146,7 @@ namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
 
             result = NeuronRepository.GetNeuronResults(
                 centralGuid,
-                this.databaseName,
+                this.settingsService.DatabaseName,
                 NeuronRepository.ConvertRelativeToDirection(type),
                 neuronQuery,
                 limit);

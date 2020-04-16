@@ -14,6 +14,6 @@ namespace works.ei8.Cortex.Graph.Domain.Model
 
         Task Clear();
 
-        Task Initialize(string databaseName);
+        Task Initialize();
     }
 }

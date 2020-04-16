@@ -12,47 +12,31 @@ namespace works.ei8.Cortex.Graph.Application
         ICancellableCommandHandler<Regenerate>,
         ICancellableCommandHandler<ResumeGeneration>
     {
-        private IDictionary<string, INotificationLogClient> clientCache;
-        private Func<INotificationLogClient> notificationLogCreator;
+        private INotificationLogClient notificationLogClient;
+        private bool isStarted;
 
-        public GraphCommandHandlers(IDictionary<string, INotificationLogClient> clientCache, Func<INotificationLogClient> notificationLogCreator)
+        public GraphCommandHandlers(INotificationLogClient notificationLogClient)
         {
-            this.clientCache = clientCache;
-            this.notificationLogCreator = notificationLogCreator;
+            this.notificationLogClient = notificationLogClient;
+            this.isStarted = false;
         }
 
         public async Task Handle(Regenerate message, CancellationToken token = default(CancellationToken))
         {
-            INotificationLogClient logClient = null;
-            if (this.clientCache.ContainsKey(message.AvatarId))
-            {
-                logClient = this.clientCache[message.AvatarId];
-                await logClient.Stop(message.AvatarId);
-            }
-            else
-                logClient = GraphCommandHandlers.CreateNotificationLog(message.AvatarId, this.notificationLogCreator, this.clientCache);
+            if (this.isStarted)
+                await this.notificationLogClient.Stop();
 
-            await logClient.Regenerate(message.AvatarId);
-        }
-
-        private static INotificationLogClient CreateNotificationLog(string avatarId, Func<INotificationLogClient> notificationLogCreator, 
-            IDictionary<string, INotificationLogClient> clientCache)
-        {
-            var notificationLog = notificationLogCreator();
-            clientCache.Add(avatarId, notificationLog);
-            return notificationLog;
+            await this.notificationLogClient.Regenerate();
+            this.isStarted = true;
         }
 
         public async Task Handle(ResumeGeneration message, CancellationToken token = default(CancellationToken))
         {
-            if (this.clientCache.ContainsKey(message.AvatarId))
+            if (this.isStarted)
                 throw new InvalidOperationException("Graph is already being generated.");
 
-            await GraphCommandHandlers.CreateNotificationLog(
-                message.AvatarId, 
-                this.notificationLogCreator, 
-                this.clientCache
-                ).ResumeGeneration(message.AvatarId);
+            await this.notificationLogClient.ResumeGeneration();
+            this.isStarted = true;
         }
 
         // TODO: stop generation
