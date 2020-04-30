@@ -1,12 +1,12 @@
 ﻿using CQRSlite.Commands;
-using works.ei8.Cortex.Graph.Application.Commands;
+using ei8.Cortex.Graph.Application.Commands;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using works.ei8.Cortex.Graph.Domain.Model;
+using ei8.Cortex.Graph.Domain.Model;
 using System.Collections.Generic;
 
-namespace works.ei8.Cortex.Graph.Application
+namespace ei8.Cortex.Graph.Application
 {
     public class GraphCommandHandlers : 
         ICancellableCommandHandler<Regenerate>,

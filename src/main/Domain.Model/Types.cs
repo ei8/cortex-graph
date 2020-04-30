@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace works.ei8.Cortex.Graph.Domain.Model
+namespace ei8.Cortex.Graph.Domain.Model
 {
     public enum NeurotransmitterEffect
     {

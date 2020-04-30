@@ -1,15 +1,15 @@
 ﻿using ArangoDB.Client;
 using ArangoDB.Client.Data;
-using org.neurul.Common.Domain.Model;
+using neurUL.Common.Domain.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using works.ei8.Cortex.Graph.Application;
-using works.ei8.Cortex.Graph.Port.Adapter.Common;
+using ei8.Cortex.Graph.Application;
+using ei8.Cortex.Graph.Port.Adapter.Common;
 
-namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
+namespace ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
 {
     internal class Helper
     {

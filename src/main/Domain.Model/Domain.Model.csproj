@@ -1,9 +1,9 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <AssemblyName>works.ei8.Cortex.Graph.Domain.Model</AssemblyName>
-    <RootNamespace>works.ei8.Cortex.Graph.Domain.Model</RootNamespace>
+    <AssemblyName>ei8.Cortex.Graph.Domain.Model</AssemblyName>
+    <RootNamespace>ei8.Cortex.Graph.Domain.Model</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
@@ -18,7 +18,7 @@
   <ItemGroup>
     <PackageReference Include="ArangoDB.Client" Version="0.7.60" />
     <PackageReference Include="CqrsLite" Version="0.18.1" />
-    <PackageReference Include="ei8.Cortex.Graph.Common" Version="0.1.4" />
+    <PackageReference Include="ei8.Cortex.Graph.Common" Version="0.1.5" />
   </ItemGroup>
 
   <ItemGroup>

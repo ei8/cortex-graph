@@ -1,17 +1,17 @@
 ﻿using Flurl;
 using NLog;
-using org.neurul.Common.Domain.Model;
+using neurUL.Common.Domain.Model;
 using Polly;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using works.ei8.Cortex.Graph.Application;
-using works.ei8.Cortex.Graph.Domain.Model;
-using works.ei8.EventSourcing.Client;
-using works.ei8.EventSourcing.Client.Out;
-using works.ei8.EventSourcing.Common;
+using ei8.Cortex.Graph.Application;
+using ei8.Cortex.Graph.Domain.Model;
+using ei8.EventSourcing.Client;
+using ei8.EventSourcing.Client.Out;
+using ei8.EventSourcing.Common;
 
-namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Standard
+namespace ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Standard
 {
     public class StandardNotificationLogClient : INotificationLogClient
     {

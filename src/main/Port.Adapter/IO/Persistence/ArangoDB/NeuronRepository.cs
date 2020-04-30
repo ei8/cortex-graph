@@ -1,19 +1,19 @@
 ﻿using ArangoDB.Client;
 using ArangoDB.Client.Data;
-using org.neurul.Common.Domain.Model;
+using neurUL.Common.Domain.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using works.ei8.Cortex.Graph.Application;
-using works.ei8.Cortex.Graph.Common;
-using works.ei8.Cortex.Graph.Domain.Model;
-using Neuron = works.ei8.Cortex.Graph.Domain.Model.Neuron;
-using Terminal = works.ei8.Cortex.Graph.Domain.Model.Terminal;
+using ei8.Cortex.Graph.Application;
+using ei8.Cortex.Graph.Common;
+using ei8.Cortex.Graph.Domain.Model;
+using Neuron = ei8.Cortex.Graph.Domain.Model.Neuron;
+using Terminal = ei8.Cortex.Graph.Domain.Model.Terminal;
 
-namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
+namespace ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
 {
     public class NeuronRepository : INeuronRepository
     {       

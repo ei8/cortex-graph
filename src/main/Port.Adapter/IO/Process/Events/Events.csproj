@@ -1,9 +1,9 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <AssemblyName>works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events</AssemblyName>
-    <RootNamespace>works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events</RootNamespace>
+    <AssemblyName>ei8.Cortex.Graph.Port.Adapter.IO.Process.Events</AssemblyName>
+    <RootNamespace>ei8.Cortex.Graph.Port.Adapter.IO.Process.Events</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
@@ -16,7 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Neurul.Common" Version="0.1.17" />
+    <PackageReference Include="Neurul.Common" Version="0.1.19" />
   </ItemGroup>
 
   <ItemGroup>

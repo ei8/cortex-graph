@@ -6,12 +6,12 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using works.ei8.Cortex.Graph.Application;
-using works.ei8.Cortex.Graph.Common;
-using works.ei8.Cortex.Graph.Domain.Model;
-using works.ei8.Cortex.Graph.Port.Adapter.Common;
+using ei8.Cortex.Graph.Application;
+using ei8.Cortex.Graph.Common;
+using ei8.Cortex.Graph.Domain.Model;
+using ei8.Cortex.Graph.Port.Adapter.Common;
 
-namespace works.ei8.Cortex.Graph.Port.Adapter.Out.Api
+namespace ei8.Cortex.Graph.Port.Adapter.Out.Api
 {
     public class GraphModule : NancyModule
     {

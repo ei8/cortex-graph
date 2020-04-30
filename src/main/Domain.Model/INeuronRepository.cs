@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using works.ei8.Cortex.Graph.Common;
+using ei8.Cortex.Graph.Common;
 
-namespace works.ei8.Cortex.Graph.Domain.Model
+namespace ei8.Cortex.Graph.Domain.Model
 {
     public interface INeuronRepository : IRepository<Neuron>
     {

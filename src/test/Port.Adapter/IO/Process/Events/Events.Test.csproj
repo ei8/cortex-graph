@@ -9,8 +9,8 @@
     <ProjectGuid>{A42C3948-894F-46A9-A67F-82ABFE8CB6AC}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Test</RootNamespace>
-    <AssemblyName>works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Test</AssemblyName>
+    <RootNamespace>ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Test</RootNamespace>
+    <AssemblyName>ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Test</AssemblyName>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <ProjectTypeGuids>{3AC096D0-A1C2-E12C-1390-A8335801FDAB};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
@@ -55,14 +55,14 @@
     <Reference Include="Moq, Version=4.7.145.0, Culture=neutral, PublicKeyToken=69f491c39445e920, processorArchitecture=MSIL">
       <HintPath>..\..\..\..\..\packages\Moq.4.7.145\lib\net45\Moq.dll</HintPath>
     </Reference>
+    <Reference Include="neurUL.Common, Version=0.1.19.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\..\..\..\packages\neurUL.Common.0.1.19\lib\netstandard2.0\neurUL.Common.dll</HintPath>
+    </Reference>
+    <Reference Include="neurUL.Common.Test, Version=0.1.7.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\..\..\..\packages\neurUL.Common.Test.0.1.7\lib\netstandard2.0\neurUL.Common.Test.dll</HintPath>
+    </Reference>
     <Reference Include="Newtonsoft.Json, Version=11.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <HintPath>..\..\..\..\..\packages\Newtonsoft.Json.11.0.1-beta1\lib\net45\Newtonsoft.Json.dll</HintPath>
-    </Reference>
-    <Reference Include="org.neurul.Common, Version=0.1.17.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\..\..\..\packages\Neurul.Common.0.1.17\lib\netstandard2.0\org.neurul.Common.dll</HintPath>
-    </Reference>
-    <Reference Include="org.neurul.Common.Test, Version=0.1.1.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\..\..\..\packages\Neurul.Common.Test.0.1.1\lib\netstandard2.0\org.neurul.Common.Test.dll</HintPath>
     </Reference>
     <Reference Include="SQLite-net, Version=1.5.166.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\..\..\..\..\packages\sqlite-net-pcl.1.5.166-beta\lib\netstandard1.1\SQLite-net.dll</HintPath>

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace works.ei8.Cortex.Graph.Domain.Model
+namespace ei8.Cortex.Graph.Domain.Model
 {
     /// <summary>
     /// Adapter is treated as a Secondary Actor Port (http://alistair.cockburn.us/Hexagonal+architecture) 

@@ -1,15 +1,15 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <RootNamespace>works.ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB</RootNamespace>
-    <AssemblyName>works.ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB</AssemblyName>
+    <RootNamespace>ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB</RootNamespace>
+    <AssemblyName>ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="ArangoDB.Client" Version="0.7.60" />
-    <PackageReference Include="ei8.Cortex.Graph.Common" Version="0.1.4" />
-    <PackageReference Include="Neurul.Common" Version="0.1.17" />
+    <PackageReference Include="ei8.Cortex.Graph.Common" Version="0.1.5" />
+    <PackageReference Include="Neurul.Common" Version="0.1.19" />
   </ItemGroup>
 
   <ItemGroup>

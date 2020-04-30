@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events
+namespace ei8.Cortex.Graph.Port.Adapter.IO.Process.Events
 {
     public struct EventDataFields
     {

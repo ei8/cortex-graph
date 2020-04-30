@@ -2,17 +2,17 @@
 using CQRSlite.Routing;
 using Nancy;
 using Nancy.TinyIoc;
-using org.neurul.Common.Http;
+using neurUL.Common.Http;
 using System;
 using System.Collections.Generic;
-using works.ei8.Cortex.Graph.Application;
-using works.ei8.Cortex.Graph.Domain.Model;
-using works.ei8.Cortex.Graph.Port.Adapter.Common;
-using works.ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB;
-using works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Standard;
-using works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Services;
+using ei8.Cortex.Graph.Application;
+using ei8.Cortex.Graph.Domain.Model;
+using ei8.Cortex.Graph.Port.Adapter.Common;
+using ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB;
+using ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Standard;
+using ei8.Cortex.Graph.Port.Adapter.IO.Process.Services;
 
-namespace works.ei8.Cortex.Graph.Port.Adapter.In.Api
+namespace ei8.Cortex.Graph.Port.Adapter.In.Api
 {
     public class CustomBootstrapper : DefaultNancyBootstrapper
     {

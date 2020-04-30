@@ -1,11 +1,11 @@
 ﻿using Newtonsoft.Json.Linq;
-using org.neurul.Common;
+using neurUL.Common;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using works.ei8.Cortex.Graph.Domain.Model;
+using ei8.Cortex.Graph.Domain.Model;
 
-namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Events
+namespace ei8.Cortex.Graph.Port.Adapter.IO.Process.Events
 {
     public class EventDataProcessor
     {

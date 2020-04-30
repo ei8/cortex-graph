@@ -5,13 +5,13 @@ using Nancy.TinyIoc;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using works.ei8.Cortex.Graph.Application;
-using works.ei8.Cortex.Graph.Domain.Model;
-using works.ei8.Cortex.Graph.Port.Adapter.Common;
-using works.ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB;
-using works.ei8.Cortex.Graph.Port.Adapter.IO.Process.Services;
+using ei8.Cortex.Graph.Application;
+using ei8.Cortex.Graph.Domain.Model;
+using ei8.Cortex.Graph.Port.Adapter.Common;
+using ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB;
+using ei8.Cortex.Graph.Port.Adapter.IO.Process.Services;
 
-namespace works.ei8.Cortex.Graph.Port.Adapter.Out.Api
+namespace ei8.Cortex.Graph.Port.Adapter.Out.Api
 {
     public class CustomBootstrapper : DefaultNancyBootstrapper
     {

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace works.ei8.Cortex.Graph.Port.Adapter.Common
+namespace ei8.Cortex.Graph.Port.Adapter.Common
 {
     public struct EnvironmentVariableKeys
     {

@@ -2,9 +2,9 @@
 using Microsoft.Extensions.DependencyInjection;
 using Nancy.Owin;
 using System;
-using works.ei8.Cortex.Graph.Port.Adapter.Common;
+using ei8.Cortex.Graph.Port.Adapter.Common;
 
-namespace works.ei8.Cortex.Graph.Port.Adapter.Out.Api
+namespace ei8.Cortex.Graph.Port.Adapter.Out.Api
 {
     public class Startup
     {

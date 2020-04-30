@@ -3,10 +3,10 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using works.ei8.Cortex.Graph.Application;
-using works.ei8.Cortex.Graph.Domain.Model;
+using ei8.Cortex.Graph.Application;
+using ei8.Cortex.Graph.Domain.Model;
 
-namespace works.ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
+namespace ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
 {
     public class SettingsRepository : IRepository<Settings>
     {

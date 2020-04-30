@@ -2,7 +2,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace works.ei8.Cortex.Graph.Domain.Model
+namespace ei8.Cortex.Graph.Domain.Model
 {
     public interface IRepository<T> where T : class
     {

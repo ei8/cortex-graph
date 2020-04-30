@@ -24,4 +24,4 @@ RUN dotnet publish -c Release -o /app
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app .
-ENTRYPOINT ["dotnet", "works.ei8.Cortex.Graph.Port.Adapter.In.Api.dll"]
+ENTRYPOINT ["dotnet", "ei8.Cortex.Graph.Port.Adapter.In.Api.dll"]

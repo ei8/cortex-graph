@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Builder;
 using Nancy.Owin;
 
-namespace works.ei8.Cortex.Graph.Port.Adapter.In.Api
+namespace ei8.Cortex.Graph.Port.Adapter.In.Api
 {
     public class Startup
     {

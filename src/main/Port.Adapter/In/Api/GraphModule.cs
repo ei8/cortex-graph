@@ -2,9 +2,9 @@
 using Nancy;
 using NLog;
 using System;
-using works.ei8.Cortex.Graph.Application.Commands;
+using ei8.Cortex.Graph.Application.Commands;
 
-namespace works.ei8.Cortex.Graph.Port.Adapter.In.Api
+namespace ei8.Cortex.Graph.Port.Adapter.In.Api
 {
     public class GraphModule : NancyModule
     {
