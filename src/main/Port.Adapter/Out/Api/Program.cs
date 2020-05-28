@@ -20,6 +20,7 @@ namespace ei8.Cortex.Graph.Port.Adapter.Out.Api
         public static IWebHost BuildWebHost(string[] args) =>
             WebHost.CreateDefaultBuilder(args)
                 .UseStartup<Startup>()
+                .UseUrls("http://+:80")
                 .Build();
     }
 }

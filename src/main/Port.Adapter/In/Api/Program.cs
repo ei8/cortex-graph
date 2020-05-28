@@ -33,6 +33,7 @@ namespace ei8.Cortex.Graph.Port.Adapter.In.Api
             WebHost.CreateDefaultBuilder(args)
                 .UseStartup<Startup>()
                 .UseNLog()
+                .UseUrls("http://+:80")
                 .Build();
     }
 }

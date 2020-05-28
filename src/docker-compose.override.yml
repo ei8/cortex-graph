@@ -7,15 +7,11 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
     ports:
-      - "60040:80"
+      - 192.168.8.131:60040:80
   cortex-graph.out.api:
     env_file: 
       - ./var1.env
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
     ports:
-      - "60041:80"
-networks:
-  default:
-    external:
-      name: nat
+      - 192.168.8.131:60041:80

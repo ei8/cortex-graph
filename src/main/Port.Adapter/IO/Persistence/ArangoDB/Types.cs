@@ -13,8 +13,8 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
             internal struct Error
             {
                 internal static readonly string GraphNotInitialized = $"Graph '{Constants.GraphName}' not initialized.";
+                internal static readonly string AuthorNeuronNotFound = "Author with Id '{0}' was not found.";
             }
-        }
-        
+        }        
     }
 }
