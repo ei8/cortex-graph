@@ -18,7 +18,7 @@ namespace ei8.Cortex.Graph.Port.Adapter.Out.Api
         private const string DefaultLimit = "1000";
         private const string DefaultType = "NotSet";
 
-        public GraphModule(INeuronQueryService queryService) : base("/cortex/graph")
+        public GraphModule(INeuronQueryService neuronQueryService, ITerminalQueryService terminalQueryService) : base("/cortex/graph")
         {
             this.Get("/neurons", async (parameters) =>
             {
@@ -26,7 +26,7 @@ namespace ei8.Cortex.Graph.Port.Adapter.Out.Api
                     {
                         var limit = this.Request.Query["limit"].HasValue ? this.Request.Query["limit"].ToString() : GraphModule.DefaultLimit;
 
-                        var nv = await queryService.GetNeurons(neuronQuery: GraphModule.ExtractQuery(this.Request.Query), limit: int.Parse(limit));
+                        var nv = await neuronQueryService.GetNeurons(neuronQuery: GraphModule.ExtractQuery(this.Request.Query), limit: int.Parse(limit));
                         return new TextResponse(JsonConvert.SerializeObject(nv));
                     }
                 );
@@ -37,7 +37,7 @@ namespace ei8.Cortex.Graph.Port.Adapter.Out.Api
             {
                 return await GraphModule.ProcessRequest(async () =>
                 {
-                    var nv = await queryService.GetNeuronById(parameters.neuronid);
+                    var nv = await neuronQueryService.GetNeuronById(parameters.neuronid);
                     return new TextResponse(JsonConvert.SerializeObject(nv));
                 }
                 );
@@ -51,7 +51,7 @@ namespace ei8.Cortex.Graph.Port.Adapter.Out.Api
                         var type = this.Request.Query["type"].HasValue ? this.Request.Query["type"].ToString() : GraphModule.DefaultType;
                         var limit = this.Request.Query["limit"].HasValue ? this.Request.Query["limit"].ToString() : GraphModule.DefaultLimit;
 
-                        var nv = await queryService.GetNeurons(
+                        var nv = await neuronQueryService.GetNeurons(
                             parameters.centralid,
                             Enum.Parse(typeof(RelativeType), type),
                             GraphModule.ExtractQuery(this.Request.Query),
@@ -70,13 +70,24 @@ namespace ei8.Cortex.Graph.Port.Adapter.Out.Api
                     {
                         var type = this.Request.Query["type"].HasValue ? this.Request.Query["type"].ToString() : GraphModule.DefaultType;
 
-                        var nv = await queryService.GetNeuronById(
+                        var nv = await neuronQueryService.GetNeuronById(
                             parameters.neuronid,
                             parameters.centralid,
                             Enum.Parse(typeof(RelativeType), type)
                             );
                         return new TextResponse(JsonConvert.SerializeObject(nv));
                     }
+                );
+            }
+            );
+
+            this.Get("/terminals/{terminalid:guid}", async (parameters) =>
+            {
+                return await GraphModule.ProcessRequest(async () =>
+                {
+                    var nv = await terminalQueryService.GetTerminalById(parameters.terminalid);
+                    return new TextResponse(JsonConvert.SerializeObject(nv));
+                }
                 );
             }
             );

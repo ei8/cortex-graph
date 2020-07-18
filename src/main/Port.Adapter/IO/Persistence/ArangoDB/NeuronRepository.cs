@@ -76,17 +76,22 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
                 if (!centralGuid.HasValue)
                 {
                     var n = await db.DocumentAsync<Neuron>(guid.ToString());
-                    var region = n.RegionId != null ? await db.DocumentAsync<Neuron>(n.RegionId) : null;
-                    // TODO: should author tag be retrieved from data tag?
-                    var author = (await db.DocumentAsync<Neuron>(n.AuthorId));
+                    if (n != null)
+                    {
+                        var region = n.RegionId != null ? await db.DocumentAsync<Neuron>(n.RegionId) : null;
+                        // TODO: should author tag be retrieved from data tag?
+                        var author = (await db.DocumentAsync<Neuron>(n.AuthorId));
 
-                    AssertionConcern.AssertStateTrue(author != null, string.Format(Constants.Messages.Error.AuthorNeuronNotFound, n.AuthorId));
-                    result = new NeuronResult[] { new NeuronResult() {
-                        Neuron = n,
-                        NeuronAuthorTag = author.Tag,
-                        RegionTag = region != null ? region.Tag : string.Empty
+                        AssertionConcern.AssertStateTrue(author != null, string.Format(Constants.Messages.Error.AuthorNeuronNotFound, n.AuthorId));
+                        result = new NeuronResult[] { new NeuronResult() {
+                                Neuron = n,
+                                NeuronAuthorTag = author.Tag,
+                                RegionTag = region != null ? region.Tag : string.Empty
+                            }
+                        };
                     }
-                    };
+                    else
+                        result = new NeuronResult[0];                    
                 }
                 else
                 {
