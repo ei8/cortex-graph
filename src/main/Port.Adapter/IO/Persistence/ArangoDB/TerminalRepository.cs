@@ -8,9 +8,9 @@ using ei8.Cortex.Graph.Domain.Model;
 
 namespace ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
 {
-    public class TerminalRepository : IRepository<Terminal>
+    public class TerminalRepository : ITerminalRepository
     {
-        private const string EdgePrefix = nameof(Neuron) + "/";
+        internal const string EdgePrefix = nameof(Neuron) + "/";
 
         private readonly ISettingsService settingsService;
 
@@ -29,19 +29,19 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
 
         public async Task<Terminal> Get(Guid guid, CancellationToken cancellationToken = default(CancellationToken))
         {
+            return await this.Get(guid, false, cancellationToken);
+        }
+
+        public async Task<Terminal> Get(Guid guid, bool includeInactive = false, CancellationToken cancellationToken = default(CancellationToken))
+        {
             Terminal result = null;
 
             using (var db = ArangoDatabase.CreateWithSetting(this.settingsService.DatabaseName))
             {
                 AssertionConcern.AssertStateTrue(await Helper.GraphExists(db), Constants.Messages.Error.GraphNotInitialized);
                 var x = await db.DocumentAsync<Terminal>(guid.ToString());
-                result = new Terminal(
-                        x.Id,
-                        x.PresynapticNeuronId.Substring(TerminalRepository.EdgePrefix.Length),
-                        x.PostsynapticNeuronId.Substring(TerminalRepository.EdgePrefix.Length),
-                        x.Effect,
-                        x.Strength
-                    );
+                if (x != null && (x.Active || includeInactive))
+                    result = x.CloneExcludeSynapticPrefix();
             }
 
             return result;

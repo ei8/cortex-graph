@@ -9,9 +9,9 @@ namespace ei8.Cortex.Graph.Application
 {
     public class TerminalQueryService : ITerminalQueryService
     {
-        private readonly IRepository<Terminal> terminalRepository;
+        private readonly ITerminalRepository terminalRepository;
 
-        public TerminalQueryService(IRepository<Terminal> terminalRepository)
+        public TerminalQueryService(ITerminalRepository terminalRepository)
         {
             this.terminalRepository = terminalRepository;
         }

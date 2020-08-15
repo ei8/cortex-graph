@@ -25,8 +25,8 @@ namespace ei8.Cortex.Graph.Port.Adapter.In.Api
             base.ConfigureRequestContainer(container, context);
 
             container.Register<ISettingsService, SettingsService>();
-            container.Register<IRepository<Neuron>, NeuronRepository>();
-            container.Register<IRepository<Terminal>, TerminalRepository>();
+            container.Register<INeuronRepository, NeuronRepository>();
+            container.Register<ITerminalRepository, TerminalRepository>();
             container.Register<IRepository<Domain.Model.Settings>, SettingsRepository>();
             container.Register<INotificationLogClient, StandardNotificationLogClient>(); 
 

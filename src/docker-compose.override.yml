@@ -1,13 +1,17 @@
 version: '3.4'
 
 services:
-  cortex-graph.in.api:
+  cortex.graph.in.api:
     env_file: 
       - ./var1.env
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-  cortex-graph.out.api:
+  cortex.graph.out.api:
     env_file: 
       - ./var1.env
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
+networks:
+    default:
+        external:
+            name: sample_default

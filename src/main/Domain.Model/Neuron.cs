@@ -24,5 +24,7 @@ namespace ei8.Cortex.Graph.Domain.Model
         public string AuthorId { get; set; }
 
         public int Version { get; set; }
+
+        public bool Active { get; set; }
     }
 }

@@ -26,7 +26,7 @@ namespace ei8.Cortex.Graph.Port.Adapter.Out.Api
             container.Register<ISettingsService, SettingsService>();
             container.Register<INeuronRepository, NeuronRepository>();
             container.Register<INeuronQueryService, NeuronQueryService>();
-            container.Register<IRepository<Terminal>, TerminalRepository>();
+            container.Register<ITerminalRepository, TerminalRepository>();
             container.Register<ITerminalQueryService, TerminalQueryService>();
         }
     }

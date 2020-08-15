@@ -21,13 +21,16 @@ namespace ei8.Cortex.Graph.Application
         public async Task<IEnumerable<CommonNeuron>> GetNeurons(string centralId = default(string), RelativeType type = RelativeType.NotSet, NeuronQuery neuronQuery = null, 
             int? limit = 1000, CancellationToken token = default(CancellationToken))
         {
-            await this.neuronRepository.Initialize();
-            return (await this.neuronRepository.GetAll(
-                    NeuronQueryService.GetNullableStringGuid(centralId), 
-                    type, 
-                    neuronQuery, 
-                    limit)
+           await this.neuronRepository.Initialize();
+            return (
+                await this.neuronRepository.GetAll(
+                        NeuronQueryService.GetNullableStringGuid(centralId), 
+                        type, 
+                        neuronQuery,
+                        limit: limit,
+                        token: token
                     )
+                )
                 .Select((n) => (this.ConvertNeuronToData(n, centralId)));
         }
 
@@ -41,7 +44,14 @@ namespace ei8.Cortex.Graph.Application
             IEnumerable<CommonNeuron> result = null;
 
             await this.neuronRepository.Initialize();
-            result = (await this.neuronRepository.GetRelative(Guid.Parse(id), NeuronQueryService.GetNullableStringGuid(centralId), type))
+            result = (
+                await this.neuronRepository.GetRelative(
+                    Guid.Parse(id), 
+                    NeuronQueryService.GetNullableStringGuid(centralId), 
+                    type, 
+                    token: token
+                    )
+                )
                 .Select(n => this.ConvertNeuronToData(n, centralId));
 
             return result;
@@ -68,10 +78,11 @@ namespace ei8.Cortex.Graph.Application
                         {
                             result = new CommonNeuron();
 
-                            // TODO: also handle case wherein presynaptic Neuron is deactivated
                             // If terminal is set but neuron is not set, terminal is targetting a deactivated neuron
                             result.Tag = "[Not found]";
-                            result.Id = nv.Terminal.PostsynapticNeuronId;
+                            result.Id = nv.Terminal.PostsynapticNeuronId.ToUpper() == centralId.ToUpper() ?
+                                nv.Terminal.PresynapticNeuronId :
+                                nv.Terminal.PostsynapticNeuronId;
                             result.Errors = new string[] { $"Unable to find Neuron with ID '{nv.Terminal.PostsynapticNeuronId}'" };
                         }
 

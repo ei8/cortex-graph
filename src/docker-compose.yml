@@ -1,14 +1,14 @@
 version: '3.4'
 
 services:
-  cortex-graph.in.api:
-    image: ei8works/cortex.graph.in.api:0.2.14
+  cortex.graph.in.api:
+    image: ei8works/cortex.graph.in.api:0.2.15
     build:
       context: .
       dockerfile: ./main/Port.Adapter/In/Api/Dockerfile
 
-  cortex-graph.out.api:
-    image: ei8works/cortex.graph.out.api:0.2.15
+  cortex.graph.out.api:
+    image: ei8works/cortex.graph.out.api:0.2.16
     build:
       context: .
       dockerfile: ./main/Port.Adapter/Out/Api/Dockerfile
