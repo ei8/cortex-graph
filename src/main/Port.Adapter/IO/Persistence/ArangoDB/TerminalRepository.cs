@@ -29,19 +29,29 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
 
         public async Task<Terminal> Get(Guid guid, CancellationToken cancellationToken = default(CancellationToken))
         {
-            return await this.Get(guid, false, cancellationToken);
+            return await this.Get(guid, null, cancellationToken);
         }
 
-        public async Task<Terminal> Get(Guid guid, bool includeInactive = false, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<Terminal> Get(Guid guid, Graph.Common.ActiveValues? activeValues, CancellationToken cancellationToken = default(CancellationToken))
         {
             Terminal result = null;
+            if (!activeValues.HasValue)
+                activeValues = this.settingsService.DefaultTerminalActiveValues;
 
             using (var db = ArangoDatabase.CreateWithSetting(this.settingsService.DatabaseName))
             {
                 AssertionConcern.AssertStateTrue(await Helper.GraphExists(db), Constants.Messages.Error.GraphNotInitialized);
-                var x = await db.DocumentAsync<Terminal>(guid.ToString());
-                if (x != null && (x.Active || includeInactive))
-                    result = x.CloneExcludeSynapticPrefix();
+                var t = await db.DocumentAsync<Terminal>(guid.ToString());
+                if (
+                        t != null && (
+                            activeValues.Value.HasFlag(Graph.Common.ActiveValues.All) ||
+                            (
+                                Helper.TryConvert(activeValues.Value, out bool activeValue) &&
+                                t.Active == activeValue
+                            )
+                        )
+                    )
+                    result = t.CloneExcludeSynapticPrefix();
             }
 
             return result;

@@ -24,9 +24,7 @@ namespace ei8.Cortex.Graph.Port.Adapter.Out.Api
             {
                 return await GraphModule.ProcessRequest(async () =>
                     {
-                        var limit = this.Request.Query["limit"].HasValue ? this.Request.Query["limit"].ToString() : GraphModule.DefaultLimit;
-
-                        var nv = await neuronQueryService.GetNeurons(neuronQuery: GraphModule.ExtractQuery(this.Request.Query), limit: int.Parse(limit));
+                        var nv = await neuronQueryService.GetNeurons(GraphModule.ExtractQuery(this.Request.Query));
                         return new TextResponse(JsonConvert.SerializeObject(nv));
                     }
                 );
@@ -37,7 +35,10 @@ namespace ei8.Cortex.Graph.Port.Adapter.Out.Api
             {
                 return await GraphModule.ProcessRequest(async () =>
                 {
-                    var nv = await neuronQueryService.GetNeuronById(parameters.neuronid);
+                    var nv = await neuronQueryService.GetNeuronById(
+                        parameters.neuronid,
+                        GraphModule.ExtractQuery(this.Request.Query)
+                        );
                     return new TextResponse(JsonConvert.SerializeObject(nv));
                 }
                 );
@@ -48,14 +49,9 @@ namespace ei8.Cortex.Graph.Port.Adapter.Out.Api
             {
                 return await GraphModule.ProcessRequest(async() =>
                     {
-                        var type = this.Request.Query["type"].HasValue ? this.Request.Query["type"].ToString() : GraphModule.DefaultType;
-                        var limit = this.Request.Query["limit"].HasValue ? this.Request.Query["limit"].ToString() : GraphModule.DefaultLimit;
-
                         var nv = await neuronQueryService.GetNeurons(
                             parameters.centralid,
-                            Enum.Parse(typeof(RelativeType), type),
-                            GraphModule.ExtractQuery(this.Request.Query),
-                            int.Parse(limit)
+                            GraphModule.ExtractQuery(this.Request.Query)
                             );
 
                         return new TextResponse(JsonConvert.SerializeObject(nv));
@@ -68,12 +64,10 @@ namespace ei8.Cortex.Graph.Port.Adapter.Out.Api
             {
                 return await GraphModule.ProcessRequest(async () =>
                     {
-                        var type = this.Request.Query["type"].HasValue ? this.Request.Query["type"].ToString() : GraphModule.DefaultType;
-
                         var nv = await neuronQueryService.GetNeuronById(
                             parameters.neuronid,
                             parameters.centralid,
-                            Enum.Parse(typeof(RelativeType), type)
+                            GraphModule.ExtractQuery(this.Request.Query)
                             );
                         return new TextResponse(JsonConvert.SerializeObject(nv));
                     }
@@ -104,6 +98,11 @@ namespace ei8.Cortex.Graph.Port.Adapter.Out.Api
             nq.PostsynapticNot = GraphModule.GetQueryArrayOrDefault(query, nameof(NeuronQuery.PostsynapticNot));
             nq.Presynaptic = GraphModule.GetQueryArrayOrDefault(query, nameof(NeuronQuery.Presynaptic));
             nq.PresynapticNot = GraphModule.GetQueryArrayOrDefault(query, nameof(NeuronQuery.PresynapticNot));
+            nq.RelativeValues = query["relative"].HasValue ? (RelativeValues?) Enum.Parse(typeof(RelativeValues), query["relative"].ToString(), true) : null;
+            nq.Limit = query["limit"].HasValue ? int.Parse(query["limit"].ToString()) : null;
+            nq.NeuronActiveValues = query["nactive"].HasValue ? (ActiveValues?) Enum.Parse(typeof(ActiveValues), query["nactive"].ToString(), true) : null;
+            nq.TerminalActiveValues = query["tactive"].HasValue ? (ActiveValues?)Enum.Parse(typeof(ActiveValues), query["tactive"].ToString(), true) : null;
+
             return nq;
         }
 

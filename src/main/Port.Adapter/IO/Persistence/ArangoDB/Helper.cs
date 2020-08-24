@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using ei8.Cortex.Graph.Application;
 using ei8.Cortex.Graph.Port.Adapter.Common;
+using ei8.Cortex.Graph.Common;
 
 namespace ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
 {
@@ -115,5 +116,24 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
             await db.CreateCollectionAsync(collectionName, type: type);
         }
 
+        internal static bool TryConvert(ActiveValues value, out bool result)
+        {
+            AssertionConcern.AssertArgumentNotEquals(ActiveValues.None, value, "Specified ActiveValues 'value' cannot be 'None'");
+
+            bool tryResult = false;
+            result = false;
+            if (!value.HasFlag(ActiveValues.All))
+            {
+                if (value.HasFlag(ActiveValues.Active))
+                {
+                    result = true;
+                    tryResult = true;
+                }
+                else if (value.HasFlag(ActiveValues.Inactive))
+                    tryResult = true;
+            }
+
+            return tryResult;
+        }
     }
 }

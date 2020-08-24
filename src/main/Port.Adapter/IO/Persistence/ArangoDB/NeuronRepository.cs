@@ -49,30 +49,35 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
 
         public async Task<Neuron> Get(Guid guid, CancellationToken token = default(CancellationToken))
         {
-            return await this.Get(guid, false, token);
+            return (await this.Get(guid, new NeuronQuery(), token))?.Neuron;
         }
 
-        public async Task<Neuron> Get(Guid guid, bool includeInactive = false, CancellationToken cancellationToken = default(CancellationToken))
+        private static void FillWithDefaults(NeuronQuery neuronQuery, ISettingsService settingsService)
         {
-            return (await this.GetRelative(guid, includeInactive: includeInactive, token: cancellationToken)).FirstOrDefault()?.Neuron;            
+            if (!neuronQuery.RelativeValues.HasValue)
+                neuronQuery.RelativeValues = settingsService.DefaultRelativeValues;
+            if (!neuronQuery.NeuronActiveValues.HasValue)
+                neuronQuery.NeuronActiveValues = settingsService.DefaultNeuronActiveValues;
+            if (!neuronQuery.TerminalActiveValues.HasValue)
+                neuronQuery.TerminalActiveValues = settingsService.DefaultTerminalActiveValues;
+            if (!neuronQuery.Limit.HasValue)
+                neuronQuery.Limit = settingsService.DefaultLimit;
         }
 
-        private static EdgeDirection ConvertRelativeToDirection(RelativeType type)
+        public async Task<NeuronResult> Get(Guid guid, NeuronQuery neuronQuery, CancellationToken cancellationToken = default(CancellationToken))
         {
-            switch (type)
-            {
-                case RelativeType.Postsynaptic:
-                    return EdgeDirection.Outbound;
-                case RelativeType.Presynaptic:
-                    return EdgeDirection.Inbound;
-                default:
-                    return EdgeDirection.Any;
-            }
+            return (await this.GetRelativeCore(guid, null, neuronQuery, cancellationToken)).FirstOrDefault();            
         }
 
-        public async Task<IEnumerable<NeuronResult>> GetRelative(Guid guid, Guid? centralGuid = null, RelativeType type = RelativeType.NotSet, bool includeInactive = false, CancellationToken token = default(CancellationToken))
+        public async Task<IEnumerable<NeuronResult>> GetRelative(Guid guid, Guid centralGuid, NeuronQuery neuronQuery, CancellationToken token = default)
+        {
+            return await this.GetRelativeCore(guid, centralGuid, neuronQuery, token);
+        }
+
+        private async Task<IEnumerable<NeuronResult>> GetRelativeCore(Guid guid, Guid? centralGuid, NeuronQuery neuronQuery, CancellationToken token = default(CancellationToken))
         {
             IEnumerable<NeuronResult> result = null;
+            NeuronRepository.FillWithDefaults(neuronQuery, this.settingsService);
 
             using (var db = ArangoDatabase.CreateWithSetting(this.settingsService.DatabaseName))
             {
@@ -81,7 +86,15 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
                 if (!centralGuid.HasValue)
                 {
                     var n = await db.DocumentAsync<Neuron>(guid.ToString());
-                    if (n != null && (n.Active || includeInactive))
+                    if (
+                            n != null && (
+                                neuronQuery.NeuronActiveValues.Value.HasFlag(ActiveValues.All) ||
+                                (
+                                    Helper.TryConvert(neuronQuery.NeuronActiveValues.Value, out bool activeValue) &&
+                                    n.Active == activeValue
+                                )
+                            )
+                        )
                     {
                         var region = n.RegionId != null ? await db.DocumentAsync<Neuron>(n.RegionId) : null;
                         // TODO: should author tag be retrieved from data tag?
@@ -100,12 +113,7 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
                 }
                 else
                 {
-                    var temp = NeuronRepository.GetNeuronResults(centralGuid.Value, this.settingsService.DatabaseName, NeuronRepository.ConvertRelativeToDirection(type), includeInactive: includeInactive);
-                    // TODO: optimize by passing this into GetNeuronResults AQL
-                    result = temp.Where(nr =>
-                        (nr.Neuron != null && nr.Neuron.Id == guid.ToString()) ||
-                        (nr.Terminal != null && nr.Terminal.PostsynapticNeuronId == guid.ToString())
-                        );
+                    result = NeuronRepository.GetNeuronResults(centralGuid.Value, guid, this.settingsService.DatabaseName, neuronQuery, token);
                 }
                 
                 // KEEP: circular references will now be allowed 2018/10/24
@@ -123,19 +131,20 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
             return result;
         }
 
-        private static IEnumerable<NeuronResult> GetNeuronResults(Guid? centralGuid, string settingName, EdgeDirection direction, NeuronQuery neuronQuery = null, bool includeInactive = false, int? limit = 1000, CancellationToken token = default(CancellationToken))
+        private static IEnumerable<NeuronResult> GetNeuronResults(Guid? centralGuid, Guid? relativeGuid, string settingName, NeuronQuery neuronQuery, CancellationToken token = default(CancellationToken))
         {
             IEnumerable<NeuronResult> result = null;
             
             using (var db = ArangoDatabase.CreateWithSetting(settingName))
             {                
-                var queryString = NeuronRepository.CreateQuery(centralGuid, direction, neuronQuery, includeInactive, limit, out List<QueryParameter> queryParameters);
+                var queryString = NeuronRepository.CreateQuery(centralGuid, relativeGuid, neuronQuery, out List<QueryParameter> queryParameters);
 
                 result = db.CreateStatement<NeuronResult>(queryString, queryParameters)
                             .AsEnumerable()
                             .ToArray();
-
-                result.ToList().ForEach(nr => nr.Terminal = nr.Terminal.CloneExcludeSynapticPrefix());
+                
+                if (centralGuid.HasValue)
+                    result.ToList().ForEach(nr => nr.Terminal = nr.Terminal.CloneExcludeSynapticPrefix());
             }
 
             return result;
@@ -156,24 +165,33 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
             await Helper.CreateDatabase(this.settingsService);
         }
 
-        public async Task<IEnumerable<NeuronResult>> GetAll(Guid? centralGuid = null, RelativeType type = RelativeType.NotSet, NeuronQuery neuronQuery = null, bool includeInactive = false, int? limit = 1000, CancellationToken token = default(CancellationToken))
+        public async Task<IEnumerable<NeuronResult>> GetAll(NeuronQuery neuronQuery, CancellationToken token = default)
+        {
+            return await this.GetAllCore(null, neuronQuery, token);
+        }
+
+        public async Task<IEnumerable<NeuronResult>> GetAll(Guid centralGuid, NeuronQuery neuronQuery, CancellationToken token = default(CancellationToken))
+        {
+            return await this.GetAllCore(centralGuid, neuronQuery, token);
+        }
+
+        private async Task<IEnumerable<NeuronResult>> GetAllCore(Guid? centralGuid, NeuronQuery neuronQuery, CancellationToken token = default(CancellationToken))
         {
             IEnumerable<NeuronResult> result = null;
+            NeuronRepository.FillWithDefaults(neuronQuery, this.settingsService);
 
             result = NeuronRepository.GetNeuronResults(
                 centralGuid,
-                this.settingsService.DatabaseName,
-                NeuronRepository.ConvertRelativeToDirection(type),
+                null,
+                this.settingsService.DatabaseName,                
                 neuronQuery,
-                includeInactive,
-                limit,
                 token
                 );
 
             return result;
         }
 
-        private static string CreateQuery(Guid? centralGuid, EdgeDirection direction, NeuronQuery neuronQuery, bool includeInactive, int? limit, out List<QueryParameter> queryParameters)
+        private static string CreateQuery(Guid? centralGuid, Guid? relativeGuid, NeuronQuery neuronQuery, out List<QueryParameter> queryParameters)
         {
             queryParameters = new List<QueryParameter>();
             var queryFiltersBuilder = new StringBuilder();
@@ -206,7 +224,7 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
             if (!centralGuid.HasValue)
             {
                 // Neuron Active
-                NeuronRepository.AddActiveFilter("n", includeInactive, queryFiltersBuilder);
+                NeuronRepository.AddActiveFilter("n", neuronQuery.NeuronActiveValues.Value, queryFiltersBuilder);
 
                 queryStringBuilder.Append($@"
                     FOR n IN Neuron
@@ -217,27 +235,52 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
             else
             {
                 // Terminal Active
-                NeuronRepository.AddActiveFilter("t", includeInactive, queryFiltersBuilder);
+                NeuronRepository.AddActiveFilter("t", neuronQuery.TerminalActiveValues.Value, queryFiltersBuilder);
 
-                // presynaptics
-                string letPre = direction == EdgeDirection.Outbound ? string.Empty : $@"LET presynaptics = (
+                string letPre = string.Empty, 
+                    inPre = string.Empty, 
+                    filterPre = string.Empty;
+
+                string activeSynapticTemplate = string.Empty;
+                if (Helper.TryConvert(neuronQuery.NeuronActiveValues.Value, out bool active))
+                    activeSynapticTemplate = " && {0}.Active == " + active.ToString();
+
+                if (neuronQuery.RelativeValues.Value.HasFlag(RelativeValues.Presynaptic))
+                {
+                    // get all presynaptic neurons of current terminal
+                    letPre = $@"LET presynaptics = (
                             FOR presynaptic IN Neuron
-                            FILTER presynaptic._id == t._from{(!includeInactive ? " && presynaptic.Active == True" : string.Empty)}
+                            FILTER presynaptic._id == t._from{string.Format(activeSynapticTemplate, "presynaptic")}
                             return presynaptic
                         )";
-                string inPre = direction == EdgeDirection.Outbound ? string.Empty : $@"t._to == @{nameof(centralGuid)} && LENGTH(presynaptics) > 0 ?
+                    // where "to" is centralGuid
+                    inPre = $@"t._to == @{nameof(centralGuid)} && LENGTH(presynaptics) > 0 ?
                                     presynaptics :";
-                string filterPre = direction == EdgeDirection.Outbound ? string.Empty : $@"t._to == @{nameof(centralGuid)}";
+                    filterPre = $@"t._to == @{nameof(centralGuid)}";
 
-                // postsynaptics
-                string letPost = direction == EdgeDirection.Inbound ? string.Empty : $@"LET postsynaptics = (
+                    if (relativeGuid.HasValue)
+                        filterPre += $@" && t._from == @{nameof(relativeGuid)}";
+                }
+
+                string letPost = string.Empty, 
+                    inPost = string.Empty, 
+                    filterPost = string.Empty;
+
+                if (neuronQuery.RelativeValues.Value.HasFlag(RelativeValues.Postsynaptic))
+                {
+                    // get postsynaptic neurons
+                    letPost = $@"LET postsynaptics = (
                             FOR postsynaptic IN Neuron
-                            FILTER postsynaptic._id == t._to{(!includeInactive ? " && postsynaptic.Active == True" : string.Empty)}
+                            FILTER postsynaptic._id == t._to{string.Format(activeSynapticTemplate, "postsynaptic")}
                             return postsynaptic
                         )";
-                string inPost = direction == EdgeDirection.Inbound ? string.Empty : $@"t._from == @{nameof(centralGuid)} && LENGTH(postsynaptics) > 0 ? 
+                    inPost = $@"t._from == @{nameof(centralGuid)} && LENGTH(postsynaptics) > 0 ? 
                                 postsynaptics :";
-                string filterPost = direction == EdgeDirection.Inbound ? string.Empty : $@"t._from == @{nameof(centralGuid)}";
+                    filterPost = $@"t._from == @{nameof(centralGuid)}";
+
+                    if (relativeGuid.HasValue)
+                        filterPost += $@" && t._to == @{nameof(relativeGuid)}";
+                }
 
                 queryStringBuilder.Append($@"
                     FOR t in Terminal 
@@ -257,7 +300,17 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
                         FILTER {filterPost} {(!string.IsNullOrEmpty(filterPost) && !string.IsNullOrEmpty(filterPre) ? "||" : string.Empty)} {filterPre}
                         {queryFiltersBuilder}
                             RETURN {{ Neuron: n, Terminal: t, TerminalAuthorTag: FIRST(terminalAuthorTag){neuronAuthorRegionReturn}}}");
-                queryParameters.Add(new QueryParameter() { Name = nameof(centralGuid), Value = $"Neuron/{centralGuid.Value.ToString()}" });
+                
+                queryParameters.Add(new QueryParameter() { 
+                    Name = nameof(centralGuid), 
+                    Value = $"Neuron/{centralGuid.Value.ToString()}" 
+                });
+                
+                if (relativeGuid.HasValue)
+                    queryParameters.Add(new QueryParameter() { 
+                        Name = nameof(relativeGuid), 
+                        Value = $"Neuron/{relativeGuid.Value.ToString()}" 
+                    });
             }
 
             // Postsynaptic
@@ -276,7 +329,7 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
             var lastReturnIndex = queryStringBuilder.ToString().ToUpper().LastIndexOf("RETURN");
             queryStringBuilder.Remove(lastReturnIndex, 6);
             queryStringBuilder.Insert(lastReturnIndex, !centralGuid.HasValue ? "SORT n.Tag LIMIT @limit RETURN" : "SORT n.Neuron.Tag LIMIT @limit RETURN");
-            queryParameters.Add(new QueryParameter() { Name = "limit", Value = limit });
+            queryParameters.Add(new QueryParameter() { Name = "limit", Value = neuronQuery.Limit.Value });
 
             return queryStringBuilder.ToString();
         }
@@ -343,16 +396,16 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
             }
         }
 
-        private static void AddActiveFilter(string variableName, bool includeInactive, StringBuilder queryFiltersBuilder)
+        private static void AddActiveFilter(string variableName, ActiveValues activeValues, StringBuilder queryFiltersBuilder)
         {
-            if (!includeInactive)
+            if (Helper.TryConvert(activeValues, out bool result))
             {
                 if (queryFiltersBuilder.Length == 0)
                     queryFiltersBuilder.Append(NeuronRepository.InitialQueryFilters);
                 if (queryFiltersBuilder.Length > NeuronRepository.InitialQueryFilters.Length)
                     queryFiltersBuilder.Append(" && ");
 
-                queryFiltersBuilder.Append($"({variableName}.Active == True)");
+                queryFiltersBuilder.Append($"({variableName}.Active == {result})");
             }
         }
 

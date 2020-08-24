@@ -1,15 +1,14 @@
-﻿using ei8.Cortex.Graph.Domain.Model;
-using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using ei8.Cortex.Graph.Common;
+using ei8.Cortex.Graph.Domain.Model;
+using neurUL.Common.Domain.Model;
 
 namespace ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
 {
     public static class ExtensionMethods
     {
-        internal static Terminal CloneExcludeSynapticPrefix(this Terminal terminal)
+        internal static Domain.Model.Terminal CloneExcludeSynapticPrefix(this Domain.Model.Terminal terminal)
         {
-            return new Terminal(
+            return new Domain.Model.Terminal(
                             terminal.Id,
                             terminal.PresynapticNeuronId.Substring(TerminalRepository.EdgePrefix.Length),
                             terminal.PostsynapticNeuronId.Substring(TerminalRepository.EdgePrefix.Length),

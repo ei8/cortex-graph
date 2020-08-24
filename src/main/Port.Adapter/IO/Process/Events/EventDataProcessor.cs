@@ -4,6 +4,10 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using ei8.Cortex.Graph.Domain.Model;
+using ei8.Cortex.Graph.Common;
+
+using DomainNeuron = ei8.Cortex.Graph.Domain.Model.Neuron;
+using DomainTerminal = ei8.Cortex.Graph.Domain.Model.Terminal;
 
 namespace ei8.Cortex.Graph.Port.Adapter.IO.Process.Events
 {
@@ -14,12 +18,12 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Process.Events
             bool result = false;
 
             JObject jd = JsonHelper.JObjectParse(data);
-            Neuron n = null;
-            Terminal t = null;
+            DomainNeuron n = null;
+            DomainTerminal t = null;
             switch (eventName)
             {
                 case "NeuronCreated":
-                    n = new Neuron()
+                    n = new DomainNeuron()
                     {
                         Id = JsonHelper.GetRequiredValue<string>(jd, nameof(EventDataFields.Neuron.NeuronCreated.Id)),
                         Version = JsonHelper.GetRequiredValue<int>(jd, nameof(EventDataFields.Neuron.NeuronCreated.Version)),
@@ -32,8 +36,7 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Process.Events
                     break;
                 case "TagChanged":
                     n = await repository.Get(
-                        Guid.Parse(JsonHelper.GetRequiredValue<string>(jd, nameof(EventDataFields.Tag.TagChanged.Id))), 
-                        true
+                        Guid.Parse(JsonHelper.GetRequiredValue<string>(jd, nameof(EventDataFields.Tag.TagChanged.Id)))                        
                         );
                     n.Tag = JsonHelper.GetRequiredValue<string>(jd, nameof(EventDataFields.Tag.TagChanged.Tag));
                     n.Version = JsonHelper.GetRequiredValue<int>(jd, nameof(EventDataFields.Tag.TagChanged.Version));
@@ -44,8 +47,7 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Process.Events
                     break;
                 case "AggregateChanged":
                     n = await repository.Get(
-                        Guid.Parse(JsonHelper.GetRequiredValue<string>(jd, nameof(EventDataFields.Aggregate.AggregateChanged.Id))), 
-                        true
+                        Guid.Parse(JsonHelper.GetRequiredValue<string>(jd, nameof(EventDataFields.Aggregate.AggregateChanged.Id)))
                         );
                     n.RegionId = JsonHelper.GetRequiredValue<string>(jd, nameof(EventDataFields.Aggregate.AggregateChanged.Aggregate));
                     n.Version = JsonHelper.GetRequiredValue<int>(jd, nameof(EventDataFields.Aggregate.AggregateChanged.Version));
@@ -56,15 +58,14 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Process.Events
                     break;
                 case "NeuronDeactivated":
                     n = await repository.Get(
-                        Guid.Parse(JsonHelper.GetRequiredValue<string>(jd, nameof(EventDataFields.Neuron.NeuronDeactivated.Id))),
-                        true
+                        Guid.Parse(JsonHelper.GetRequiredValue<string>(jd, nameof(EventDataFields.Neuron.NeuronDeactivated.Id)))
                         );
                     n.Active = false;
                     await repository.Save(n);
                     result = true;
                     break;
                 case "TerminalCreated":
-                    t = new Terminal(
+                    t = new DomainTerminal(
                                 JsonHelper.GetRequiredValue<string>(jd, nameof(EventDataFields.Terminal.TerminalCreated.Id)),
                                 JsonHelper.GetRequiredValue<string>(jd, nameof(EventDataFields.Terminal.TerminalCreated.PresynapticNeuronId)),
                                 JsonHelper.GetRequiredValue<string>(jd, nameof(EventDataFields.Terminal.TerminalCreated.PostsynapticNeuronId)),
@@ -82,8 +83,7 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Process.Events
                     break;
                 case "TerminalDeactivated":
                     t = await terminalRepository.Get(
-                        Guid.Parse(JsonHelper.GetRequiredValue<string>(jd, nameof(EventDataFields.Terminal.TerminalDeactivated.Id))),
-                        true
+                        Guid.Parse(JsonHelper.GetRequiredValue<string>(jd, nameof(EventDataFields.Terminal.TerminalDeactivated.Id)))
                         );
 
                     t.Active = false;

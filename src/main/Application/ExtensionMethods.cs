@@ -16,6 +16,7 @@ namespace ei8.Cortex.Graph.Application
             result.Version = value.Version;
             result.AuthorId = value.AuthorId;
             result.RegionId = value.RegionId;
+            result.Active = value.Active;
 
             return result;
         }
@@ -32,6 +33,7 @@ namespace ei8.Cortex.Graph.Application
             result.Version = value.Version;
             result.Timestamp = value.Timestamp;
             result.AuthorId = value.AuthorId;
+            result.Active = value.Active;
 
             return result;
         }

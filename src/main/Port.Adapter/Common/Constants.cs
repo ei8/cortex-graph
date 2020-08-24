@@ -11,6 +11,10 @@ namespace ei8.Cortex.Graph.Port.Adapter.Common
         public const string DatabaseName = "DB_NAME";
         public const string DbUrl = @"DB_URL";
         public const string DbUsername = @"DB_USERNAME";
-        public const string DbPassword = @"DB_PASSWORD";        
+        public const string DbPassword = @"DB_PASSWORD";
+        public const string DefaultRelativeValues = @"DEFAULT_RELATIVE_VALUES";
+        public const string DefaultNeuronActiveValues = @"DEFAULT_NEURON_ACTIVE_VALUES";
+        public const string DefaultTerminalActiveValues = @"DEFAULT_TERMINAL_ACTIVE_VALUES";
+        public const string DefaultLimit = @"DEFAULT_LIMIT";
     }
 }

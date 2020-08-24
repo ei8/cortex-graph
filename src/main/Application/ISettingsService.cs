@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ei8.Cortex.Graph.Common;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -17,5 +18,13 @@ namespace ei8.Cortex.Graph.Application
         string DbUsername { get; }
 
         string DbPassword { get; }
+
+        RelativeValues DefaultRelativeValues { get; }
+
+        ActiveValues DefaultNeuronActiveValues { get; }
+
+        ActiveValues DefaultTerminalActiveValues { get; }
+
+        int DefaultLimit { get; }
     }
 }

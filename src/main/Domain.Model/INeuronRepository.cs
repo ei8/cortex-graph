@@ -9,10 +9,12 @@ namespace ei8.Cortex.Graph.Domain.Model
 {
     public interface INeuronRepository : IRepository<Neuron>
     {
-        Task<Neuron> Get(Guid guid, bool includeInactive = false, CancellationToken cancellationToken = default(CancellationToken));
+        Task<NeuronResult> Get(Guid guid, NeuronQuery neuronQuery, CancellationToken cancellationToken = default(CancellationToken));
 
-        Task<IEnumerable<NeuronResult>> GetAll(Guid? centralGuid = null, RelativeType type = RelativeType.NotSet, NeuronQuery neuronQuery = null, bool includeInactive = false, int? limit = 1000, CancellationToken token = default(CancellationToken));
+        Task<IEnumerable<NeuronResult>> GetAll(NeuronQuery neuronQuery, CancellationToken token = default(CancellationToken));
 
-        Task<IEnumerable<NeuronResult>> GetRelative(Guid guid, Guid? centralGuid = null, RelativeType type = RelativeType.NotSet, bool includeInactive = false, CancellationToken token = default(CancellationToken));
+        Task<IEnumerable<NeuronResult>> GetAll(Guid centralGuid, NeuronQuery neuronQuery, CancellationToken token = default(CancellationToken));
+
+        Task<IEnumerable<NeuronResult>> GetRelative(Guid guid, Guid centralGuid, NeuronQuery neuronQuery, CancellationToken token = default(CancellationToken));
     }
 }
