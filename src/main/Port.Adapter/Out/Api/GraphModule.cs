@@ -79,7 +79,10 @@ namespace ei8.Cortex.Graph.Port.Adapter.Out.Api
             {
                 return await GraphModule.ProcessRequest(async () =>
                 {
-                    var nv = await terminalQueryService.GetTerminalById(parameters.terminalid);
+                    var nv = await terminalQueryService.GetTerminalById(
+                        parameters.terminalid,
+                        GraphModule.ExtractQuery(this.Request.Query)
+                        );
                     return new TextResponse(JsonConvert.SerializeObject(nv));
                 }
                 );

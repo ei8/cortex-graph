@@ -9,6 +9,6 @@ namespace ei8.Cortex.Graph.Domain.Model
 {
     public interface ITerminalRepository : IRepository<Terminal>
     {
-        Task<Terminal> Get(Guid guid, ActiveValues? activeValues, CancellationToken cancellationToken = default(CancellationToken));
+        Task<Terminal> Get(Guid guid, NeuronQuery neuronQuery, CancellationToken cancellationToken = default(CancellationToken));
     }
 }

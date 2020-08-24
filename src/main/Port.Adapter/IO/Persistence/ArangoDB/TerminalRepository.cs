@@ -29,14 +29,13 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
 
         public async Task<Terminal> Get(Guid guid, CancellationToken cancellationToken = default(CancellationToken))
         {
-            return await this.Get(guid, null, cancellationToken);
+            return await this.Get(guid, new Graph.Common.NeuronQuery(), cancellationToken);
         }
 
-        public async Task<Terminal> Get(Guid guid, Graph.Common.ActiveValues? activeValues, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<Terminal> Get(Guid guid, Graph.Common.NeuronQuery neuronQuery, CancellationToken cancellationToken = default(CancellationToken))
         {
             Terminal result = null;
-            if (!activeValues.HasValue)
-                activeValues = this.settingsService.DefaultTerminalActiveValues;
+            NeuronRepository.FillWithDefaults(neuronQuery, this.settingsService);
 
             using (var db = ArangoDatabase.CreateWithSetting(this.settingsService.DatabaseName))
             {
@@ -44,9 +43,9 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
                 var t = await db.DocumentAsync<Terminal>(guid.ToString());
                 if (
                         t != null && (
-                            activeValues.Value.HasFlag(Graph.Common.ActiveValues.All) ||
+                            neuronQuery.TerminalActiveValues.Value.HasFlag(Graph.Common.ActiveValues.All) ||
                             (
-                                Helper.TryConvert(activeValues.Value, out bool activeValue) &&
+                                Helper.TryConvert(neuronQuery.TerminalActiveValues.Value, out bool activeValue) &&
                                 t.Active == activeValue
                             )
                         )

@@ -52,7 +52,7 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
             return (await this.Get(guid, new NeuronQuery(), token))?.Neuron;
         }
 
-        private static void FillWithDefaults(NeuronQuery neuronQuery, ISettingsService settingsService)
+        internal static void FillWithDefaults(NeuronQuery neuronQuery, ISettingsService settingsService)
         {
             if (!neuronQuery.RelativeValues.HasValue)
                 neuronQuery.RelativeValues = settingsService.DefaultRelativeValues;

@@ -1,4 +1,5 @@
-﻿using ei8.Cortex.Graph.Domain.Model;
+﻿using ei8.Cortex.Graph.Common;
+using ei8.Cortex.Graph.Domain.Model;
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -16,12 +17,12 @@ namespace ei8.Cortex.Graph.Application
             this.terminalRepository = terminalRepository;
         }
 
-        public async Task<CommonTerminal> GetTerminalById(string id, CancellationToken token = default(CancellationToken))
+        public async Task<CommonTerminal> GetTerminalById(string id, NeuronQuery neuronQuery, CancellationToken token = default(CancellationToken))
         {
             CommonTerminal result = null;
 
             await this.terminalRepository.Initialize();
-            result = (await this.terminalRepository.Get(Guid.Parse(id), token)).ToCommon();
+            result = (await this.terminalRepository.Get(Guid.Parse(id), neuronQuery, token))?.ToCommon();
 
             return result;
         }
