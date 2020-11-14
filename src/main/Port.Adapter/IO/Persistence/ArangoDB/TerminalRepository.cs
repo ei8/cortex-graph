@@ -10,8 +10,6 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
 {
     public class TerminalRepository : ITerminalRepository
     {
-        internal const string EdgePrefix = nameof(Neuron) + "/";
-
         private readonly ISettingsService settingsService;
 
         public TerminalRepository(ISettingsService settingsService)
@@ -68,10 +66,6 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
 
         public async Task Save(Terminal value, CancellationToken cancellationToken = default(CancellationToken))
         {
-            // update foreign keys
-            value.PresynapticNeuronId = TerminalRepository.EdgePrefix + value.PresynapticNeuronId;
-            value.PostsynapticNeuronId = TerminalRepository.EdgePrefix + value.PostsynapticNeuronId;
-            
             await Helper.Save(value, nameof(Terminal), this.settingsService.DatabaseName);
         }
 

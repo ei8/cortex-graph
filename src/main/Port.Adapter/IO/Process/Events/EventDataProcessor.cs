@@ -13,58 +13,65 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Process.Events
 {
     public class EventDataProcessor
     {
-        public async Task<bool> Process(INeuronRepository repository, ITerminalRepository terminalRepository, string eventName, string data, string authorId)
+        public async Task<bool> Process(INeuronRepository neuronRepository, ITerminalRepository terminalRepository, string eventName, string data, string authorId)
         {
             bool result = false;
 
             JObject jd = JsonHelper.JObjectParse(data);
             DomainNeuron n = null;
             DomainTerminal t = null;
+            var changeTimestamp = string.Empty;
             switch (eventName)
             {
                 case "NeuronCreated":
+                    changeTimestamp = JsonHelper.GetRequiredValue<string>(jd, nameof(EventDataFields.Neuron.NeuronCreated.Timestamp));
                     n = new DomainNeuron()
                     {
                         Id = JsonHelper.GetRequiredValue<string>(jd, nameof(EventDataFields.Neuron.NeuronCreated.Id)),
                         Version = JsonHelper.GetRequiredValue<int>(jd, nameof(EventDataFields.Neuron.NeuronCreated.Version)),
-                        Timestamp = JsonHelper.GetRequiredValue<string>(jd, nameof(EventDataFields.Neuron.NeuronCreated.Timestamp)),
-                        AuthorId = authorId,
+                        CreationTimestamp = changeTimestamp,
+                        CreationAuthorId = authorId,
                         Active = true
                     };
-                    await repository.Save(n);
+                    await neuronRepository.Save(n);
                     result = true;
                     break;
                 case "TagChanged":
-                    n = await repository.Get(
+                    n = await neuronRepository.Get(
                         Guid.Parse(JsonHelper.GetRequiredValue<string>(jd, nameof(EventDataFields.Tag.TagChanged.Id)))                        
                         );
                     n.Tag = JsonHelper.GetRequiredValue<string>(jd, nameof(EventDataFields.Tag.TagChanged.Tag));
                     n.Version = JsonHelper.GetRequiredValue<int>(jd, nameof(EventDataFields.Tag.TagChanged.Version));
-                    n.Timestamp = JsonHelper.GetRequiredValue<string>(jd, nameof(EventDataFields.Tag.TagChanged.Timestamp));
-                    n.AuthorId = authorId;
-                    await repository.Save(n);
+                    n.LastModificationTimestamp = JsonHelper.GetRequiredValue<string>(jd, nameof(EventDataFields.Tag.TagChanged.Timestamp));
+                    n.LastModificationAuthorId = authorId;
+                    await neuronRepository.Save(n);
                     result = true;
                     break;
                 case "AggregateChanged":
-                    n = await repository.Get(
+                    n = await neuronRepository.Get(
                         Guid.Parse(JsonHelper.GetRequiredValue<string>(jd, nameof(EventDataFields.Aggregate.AggregateChanged.Id)))
                         );
                     n.RegionId = JsonHelper.GetRequiredValue<string>(jd, nameof(EventDataFields.Aggregate.AggregateChanged.Aggregate));
                     n.Version = JsonHelper.GetRequiredValue<int>(jd, nameof(EventDataFields.Aggregate.AggregateChanged.Version));
-                    n.Timestamp = JsonHelper.GetRequiredValue<string>(jd, nameof(EventDataFields.Aggregate.AggregateChanged.Timestamp));
-                    n.AuthorId = authorId;
-                    await repository.Save(n);
+                    n.LastModificationTimestamp = JsonHelper.GetRequiredValue<string>(jd, nameof(EventDataFields.Aggregate.AggregateChanged.Timestamp));
+                    n.LastModificationAuthorId = authorId;
+                    await neuronRepository.Save(n);
                     result = true;
                     break;
                 case "NeuronDeactivated":
-                    n = await repository.Get(
+                    n = await neuronRepository.Get(
                         Guid.Parse(JsonHelper.GetRequiredValue<string>(jd, nameof(EventDataFields.Neuron.NeuronDeactivated.Id)))
                         );
+                    n.Version = JsonHelper.GetRequiredValue<int>(jd, nameof(EventDataFields.Neuron.NeuronDeactivated.Version));
+                    n.LastModificationTimestamp = JsonHelper.GetRequiredValue<string>(jd, nameof(EventDataFields.Neuron.NeuronDeactivated.Timestamp));
+                    n.LastModificationAuthorId = authorId;
                     n.Active = false;
-                    await repository.Save(n);
+                    await neuronRepository.Save(n);
                     result = true;
                     break;
                 case "TerminalCreated":
+                    changeTimestamp = JsonHelper.GetRequiredValue<string>(jd, nameof(EventDataFields.Terminal.TerminalCreated.Timestamp));
+
                     t = new DomainTerminal(
                                 JsonHelper.GetRequiredValue<string>(jd, nameof(EventDataFields.Terminal.TerminalCreated.Id)),
                                 JsonHelper.GetRequiredValue<string>(jd, nameof(EventDataFields.Terminal.TerminalCreated.PresynapticNeuronId)),
@@ -74,20 +81,36 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Process.Events
                             )
                     {
                         Version = JsonHelper.GetRequiredValue<int>(jd, nameof(EventDataFields.Terminal.TerminalCreated.Version)),
-                        Timestamp = JsonHelper.GetRequiredValue<string>(jd, nameof(EventDataFields.Terminal.TerminalCreated.Timestamp)),
-                        AuthorId = authorId, 
+                        CreationTimestamp = changeTimestamp,
+                        CreationAuthorId = authorId, 
                         Active = true
                     };
                     await terminalRepository.Save(t);
+
+                    n = await neuronRepository.Get(Guid.Parse(t.PresynapticNeuronIdCore));
+                    n.UnifiedLastModificationTimestamp = changeTimestamp;
+                    n.UnifiedLastModificationAuthorId = authorId;
+                    await neuronRepository.Save(n);
+
                     result = true;
                     break;
                 case "TerminalDeactivated":
+                    changeTimestamp = JsonHelper.GetRequiredValue<string>(jd, nameof(EventDataFields.Terminal.TerminalDeactivated.Timestamp));
+
                     t = await terminalRepository.Get(
                         Guid.Parse(JsonHelper.GetRequiredValue<string>(jd, nameof(EventDataFields.Terminal.TerminalDeactivated.Id)))
                         );
-
+                    t.Version = JsonHelper.GetRequiredValue<int>(jd, nameof(EventDataFields.Terminal.TerminalDeactivated.Version));
+                    t.LastModificationTimestamp = changeTimestamp;
+                    t.LastModificationAuthorId = authorId;
                     t.Active = false;
                     await terminalRepository.Save(t);
+
+                    n = await neuronRepository.Get(Guid.Parse(t.PresynapticNeuronIdCore));
+                    n.UnifiedLastModificationTimestamp = changeTimestamp;
+                    n.UnifiedLastModificationAuthorId = authorId;
+                    await neuronRepository.Save(n);
+
                     result = true;
                     break;
             }

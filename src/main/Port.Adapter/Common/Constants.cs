@@ -15,6 +15,7 @@ namespace ei8.Cortex.Graph.Port.Adapter.Common
         public const string DefaultRelativeValues = @"DEFAULT_RELATIVE_VALUES";
         public const string DefaultNeuronActiveValues = @"DEFAULT_NEURON_ACTIVE_VALUES";
         public const string DefaultTerminalActiveValues = @"DEFAULT_TERMINAL_ACTIVE_VALUES";
-        public const string DefaultLimit = @"DEFAULT_LIMIT";
+        public const string DefaultPageSize = @"DEFAULT_PAGE_SIZE";
+        public const string DefaultPage = @"DEFAULT_PAGE";
     }
 }

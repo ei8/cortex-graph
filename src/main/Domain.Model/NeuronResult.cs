@@ -14,10 +14,16 @@ namespace ei8.Cortex.Graph.Domain.Model
 
         public Terminal Terminal { get; set; }
 
-        public string NeuronAuthorTag { get; set; }
+        public string NeuronCreationAuthorTag { get; set; }
 
-        public string TerminalAuthorTag { get; set; }
+        public string NeuronLastModificationAuthorTag { get; set; }
 
-        public string RegionTag { get; set; }
+        public string NeuronUnifiedLastModificationAuthorTag { get; set; }
+
+        public string NeuronRegionTag { get; set; }
+
+        public string TerminalCreationAuthorTag { get; set; }
+
+        public string TerminalLastModificationAuthorTag { get; set; }        
     }
 }

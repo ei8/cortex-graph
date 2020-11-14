@@ -25,6 +25,8 @@ namespace ei8.Cortex.Graph.Application
 
         ActiveValues DefaultTerminalActiveValues { get; }
 
-        int DefaultLimit { get; }
+        int DefaultPageSize { get; }
+
+        int DefaultPage { get; }
     }
 }

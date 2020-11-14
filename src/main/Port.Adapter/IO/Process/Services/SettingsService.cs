@@ -25,6 +25,8 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Process.Services
 
         public ActiveValues DefaultTerminalActiveValues => (ActiveValues)Enum.Parse(typeof(ActiveValues), Environment.GetEnvironmentVariable(EnvironmentVariableKeys.DefaultTerminalActiveValues), true);
 
-        public int DefaultLimit => int.Parse(Environment.GetEnvironmentVariable(EnvironmentVariableKeys.DefaultLimit));
+        public int DefaultPageSize => int.Parse(Environment.GetEnvironmentVariable(EnvironmentVariableKeys.DefaultPageSize));
+
+        public int DefaultPage => int.Parse(Environment.GetEnvironmentVariable(EnvironmentVariableKeys.DefaultPage));
     }
 }

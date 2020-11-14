@@ -126,11 +126,11 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Test.EventDataProcesso
                     Assert.Equal(this.version, this.savingNeuron.Version);
                 }
 
-                [Fact]
-                public void Should_save_correct_timestamp()
-                {
-                    Assert.Equal(this.timestamp, this.savingNeuron.Timestamp);
-                }
+                // TODO: [Fact]
+                //public void Should_save_correct_timestamp()
+                //{
+                //    Assert.Equal(this.timestamp, this.savingNeuron.Timestamp);
+                //}
             }
         }
 
@@ -178,11 +178,11 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Test.EventDataProcesso
                     Assert.Equal(this.version, this.savingNeuron.Version);
                 }
 
-                [Fact]
-                public void Should_save_correct_timestamp()
-                {
-                    Assert.Equal(this.timestamp, this.savingNeuron.Timestamp);
-                }
+                // TODO: [Fact]
+                //public void Should_save_correct_timestamp()
+                //{
+                //    Assert.Equal(this.timestamp, this.savingNeuron.Timestamp);
+                //}
             }
         }
 
@@ -240,11 +240,11 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Test.EventDataProcesso
                     Assert.Equal(this.version, this.savingTerminal.Version);
                 }
 
-                [Fact]
-                public void Should_save_correct_timestamp()
-                {
-                    Assert.Equal(this.timestamp, this.savingTerminal.Timestamp);
-                }
+                // TODO: [Fact]
+                //public void Should_save_correct_timestamp()
+                //{
+                //    Assert.Equal(this.timestamp, this.savingTerminal.Timestamp);
+                //}
             }            
         }
 

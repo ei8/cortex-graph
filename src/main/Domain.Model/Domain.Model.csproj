@@ -16,9 +16,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="ArangoDB.Client" Version="0.7.60" />
+    <PackageReference Include="ArangoDB.Client" Version="0.7.70" />
     <PackageReference Include="CqrsLite" Version="0.18.1" />
-    <PackageReference Include="ei8.Cortex.Graph.Common" Version="0.1.12" />
+    <PackageReference Include="ei8.Cortex.Graph.Common" Version="0.1.19" />
   </ItemGroup>
 
   <ItemGroup>
