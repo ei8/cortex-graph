@@ -71,7 +71,7 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
             return await this.GetRelativeCore(guid, null, neuronQuery, cancellationToken);            
         }
 
-        public async Task<Domain.Model.QueryResult> GetRelative(Guid guid, Guid centralGuid, NeuronQuery neuronQuery, CancellationToken token = default)
+        public async Task<Domain.Model.QueryResult> GetRelative(Guid guid, Guid centralGuid, NeuronQuery neuronQuery, CancellationToken token = default(CancellationToken))
         {
             return await this.GetRelativeCore(guid, centralGuid, neuronQuery, token);
         }
@@ -200,7 +200,7 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
             await Helper.CreateDatabase(this.settingsService);
         }
 
-        public async Task<Domain.Model.QueryResult> GetAll(NeuronQuery neuronQuery, CancellationToken token = default)
+        public async Task<Domain.Model.QueryResult> GetAll(NeuronQuery neuronQuery, CancellationToken token = default(CancellationToken))
         {
             return await this.GetAllCore(null, neuronQuery, token);
         }

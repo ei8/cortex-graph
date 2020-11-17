@@ -48,7 +48,7 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
                 if (enumMemberAttribute.Value == str) return (T)Enum.Parse(enumType, name);
             }
             //throw exception or whatever handling you want or
-            return default;
+            return default(T);
         }
     }
 }
