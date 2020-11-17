@@ -1,12 +1,11 @@
-FROM microsoft/dotnet:2.0-runtime AS base
+FROM mcr.microsoft.com/dotnet/core/aspnet:3.1 AS base
 WORKDIR /app
 EXPOSE 80
 
-FROM microsoft/dotnet:2.0-sdk AS build
+FROM mcr.microsoft.com/dotnet/core/sdk:3.1 AS build
 WORKDIR /src
 COPY *.sln ./
 COPY . .
-RUN dotnet restore ei8-Cortex-Graph-Master.sln
 WORKDIR /src/main/Port.Adapter/In/Api
 RUN dotnet build -c Release -o /app
 

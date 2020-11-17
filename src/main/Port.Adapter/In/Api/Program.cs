@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore;
 using NLog.Web;
+using Microsoft.Extensions.Hosting;
 
 namespace ei8.Cortex.Graph.Port.Adapter.In.Api
 {
@@ -19,7 +20,7 @@ namespace ei8.Cortex.Graph.Port.Adapter.In.Api
             try
             {
                 logger.Debug("Init main.");
-                BuildWebHost(args).Run();
+                CreateHostBuilder(args).Build().Run();
             }
             catch (Exception e)
             {
@@ -29,11 +30,13 @@ namespace ei8.Cortex.Graph.Port.Adapter.In.Api
             }
         }
 
-        public static IWebHost BuildWebHost(string[] args) =>
-            WebHost.CreateDefaultBuilder(args)
-                .UseStartup<Startup>()
-                .UseNLog()
-                .UseUrls("http://+:80")
-                .Build();
+        public static IHostBuilder CreateHostBuilder(string[] args) =>
+            Host.CreateDefaultBuilder(args)
+                .ConfigureWebHostDefaults(webBuilder =>
+                {
+                    webBuilder
+                        .UseStartup<Startup>()
+                        .UseUrls("http://+:80");
+                });
     }
 }
