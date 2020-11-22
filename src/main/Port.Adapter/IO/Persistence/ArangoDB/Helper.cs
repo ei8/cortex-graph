@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using ei8.Cortex.Graph.Application;
 using ei8.Cortex.Graph.Port.Adapter.Common;
+using ei8.Cortex.Graph.Common;
 
 namespace ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
 {
@@ -28,6 +29,10 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
                     s.Url = settingsService.DbUrl;
                     s.Credential = new System.Net.NetworkCredential(settingsService.DbUsername, settingsService.DbPassword);
                     s.SystemDatabaseCredential = s.Credential;
+                    // this ensures that dates are not parsed during jsonserialization
+                    // src/ArangoDB.Client/Serialization/DocumentSerializer.cs - DeserializeSingleResult does not use created serializer
+                    // src/ArangoDB.Client/Http/HttpCommand.cs - (line 141) setting EnabledChangeTracking to false ensures that Deserialize is called instead of DeserializeSingleResult
+                    s.DisableChangeTracking = true;
                 }
                 );
             using (var db = ArangoDatabase.CreateWithSetting(settingsService.DatabaseName))
@@ -115,5 +120,24 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
             await db.CreateCollectionAsync(collectionName, type: type);
         }
 
+        internal static bool TryConvert(ActiveValues value, out bool result)
+        {
+            AssertionConcern.AssertArgumentNotEquals(ActiveValues.None, value, "Specified ActiveValues 'value' cannot be 'None'");
+
+            bool tryResult = false;
+            result = false;
+            if (!value.HasFlag(ActiveValues.All))
+            {
+                if (value.HasFlag(ActiveValues.Active))
+                {
+                    result = true;
+                    tryResult = true;
+                }
+                else if (value.HasFlag(ActiveValues.Inactive))
+                    tryResult = true;
+            }
+
+            return tryResult;
+        }
     }
 }

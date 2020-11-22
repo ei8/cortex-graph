@@ -1,8 +1,7 @@
 ﻿using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.DependencyInjection;
 using Nancy.Owin;
-using System;
-using ei8.Cortex.Graph.Port.Adapter.Common;
 
 namespace ei8.Cortex.Graph.Port.Adapter.Out.Api
 {
@@ -10,6 +9,10 @@ namespace ei8.Cortex.Graph.Port.Adapter.Out.Api
     {
         public void ConfigureServices(IServiceCollection services)
         {
+            services.Configure<KestrelServerOptions>(options =>
+            {
+                options.AllowSynchronousIO = true;
+            });
         }
 
         // This method gets called by the runtime. Use this method to add services to the container.

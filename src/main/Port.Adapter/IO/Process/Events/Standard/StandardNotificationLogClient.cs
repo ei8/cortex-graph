@@ -26,12 +26,12 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Standard
         private const long StartPosition = 0;
         private static readonly Logger logger = LogManager.GetCurrentClassLogger();
         private ISettingsService settingsService;
-        private IRepository<Neuron> neuronRepository;
-        private IRepository<Terminal> terminalRepository;
+        private INeuronRepository neuronRepository;
+        private ITerminalRepository terminalRepository;
         private IRepository<Settings> settingsRepository;
         private bool polling;
 
-        public StandardNotificationLogClient(ISettingsService settingsService, IRepository<Settings> settingsRepository, IRepository<Neuron> neuronRepository, IRepository<Terminal> terminalRepository)
+        public StandardNotificationLogClient(ISettingsService settingsService, IRepository<Settings> settingsRepository, INeuronRepository neuronRepository, ITerminalRepository terminalRepository)
         {
             this.settingsService = settingsService;
             this.neuronRepository = neuronRepository;
@@ -68,7 +68,7 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Standard
             }
         }
 
-        private async static Task UpdateGraph(string notificationLogBaseUrl, string position, IRepository<Neuron> neuronRepository, IRepository<Terminal> terminalRepository, IRepository<Settings> settingsRepository)
+        private async static Task UpdateGraph(string notificationLogBaseUrl, string position, INeuronRepository neuronRepository, ITerminalRepository terminalRepository, IRepository<Settings> settingsRepository)
         {
             AssertionConcern.AssertStateTrue(long.TryParse(position, out long lastPosition), $"Specified position value of '{position}' is not a valid integer (long).");
             AssertionConcern.AssertMinimum(lastPosition, 0, nameof(position));

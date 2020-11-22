@@ -8,10 +8,8 @@ using ei8.Cortex.Graph.Domain.Model;
 
 namespace ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
 {
-    public class TerminalRepository : IRepository<Terminal>
+    public class TerminalRepository : ITerminalRepository
     {
-        private const string EdgePrefix = nameof(Neuron) + "/";
-
         private readonly ISettingsService settingsService;
 
         public TerminalRepository(ISettingsService settingsService)
@@ -29,19 +27,28 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
 
         public async Task<Terminal> Get(Guid guid, CancellationToken cancellationToken = default(CancellationToken))
         {
+            return await this.Get(guid, new Graph.Common.NeuronQuery(), cancellationToken);
+        }
+
+        public async Task<Terminal> Get(Guid guid, Graph.Common.NeuronQuery neuronQuery, CancellationToken cancellationToken = default(CancellationToken))
+        {
             Terminal result = null;
+            NeuronRepository.FillWithDefaults(neuronQuery, this.settingsService);
 
             using (var db = ArangoDatabase.CreateWithSetting(this.settingsService.DatabaseName))
             {
                 AssertionConcern.AssertStateTrue(await Helper.GraphExists(db), Constants.Messages.Error.GraphNotInitialized);
-                var x = await db.DocumentAsync<Terminal>(guid.ToString());
-                result = new Terminal(
-                        x.Id,
-                        x.PresynapticNeuronId.Substring(TerminalRepository.EdgePrefix.Length),
-                        x.PostsynapticNeuronId.Substring(TerminalRepository.EdgePrefix.Length),
-                        x.Effect,
-                        x.Strength
-                    );
+                var t = await db.DocumentAsync<Terminal>(guid.ToString());
+                if (
+                        t != null && (
+                            neuronQuery.TerminalActiveValues.Value.HasFlag(Graph.Common.ActiveValues.All) ||
+                            (
+                                Helper.TryConvert(neuronQuery.TerminalActiveValues.Value, out bool activeValue) &&
+                                t.Active == activeValue
+                            )
+                        )
+                    )
+                    result = t.CloneExcludeSynapticPrefix();
             }
 
             return result;
@@ -59,10 +66,6 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
 
         public async Task Save(Terminal value, CancellationToken cancellationToken = default(CancellationToken))
         {
-            // update foreign keys
-            value.PresynapticNeuronId = TerminalRepository.EdgePrefix + value.PresynapticNeuronId;
-            value.PostsynapticNeuronId = TerminalRepository.EdgePrefix + value.PostsynapticNeuronId;
-            
             await Helper.Save(value, nameof(Terminal), this.settingsService.DatabaseName);
         }
 

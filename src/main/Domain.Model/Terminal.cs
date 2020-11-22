@@ -7,11 +7,15 @@ namespace ei8.Cortex.Graph.Domain.Model
 {
     public class Terminal
     {
-        public Terminal(string id, string presynapticNeuronId, string postsynapticNeuronId, NeurotransmitterEffect effect, float strength)
+        private string creationTimestamp;
+        private string creationAuthorId;
+
+        private static readonly string EdgePrefix = nameof(Neuron) + "/";
+        public Terminal(string id, string presynapticNeuronIdCore, string postsynapticNeuronIdCore, NeurotransmitterEffect effect, float strength)
         {           
             this.Id = id;
-            this.PresynapticNeuronId = presynapticNeuronId;
-            this.PostsynapticNeuronId = postsynapticNeuronId;
+            this.PresynapticNeuronIdCore = presynapticNeuronIdCore;
+            this.PostsynapticNeuronIdCore = postsynapticNeuronIdCore;
             this.Effect = effect;
             this.Strength = strength;
         }
@@ -19,31 +23,46 @@ namespace ei8.Cortex.Graph.Domain.Model
         [DocumentProperty(Identifier = IdentifierType.Key)]
         public string Id { get; set; }
 
-        private string presynapticNeuronId;
+        private string presynapticNeuronIdCore;
+
+        [DocumentProperty(IgnoreProperty = true)]
+        public string PresynapticNeuronIdCore
+        {
+            get { return presynapticNeuronIdCore; }
+            set { presynapticNeuronIdCore = value; }
+        }
+
         [DocumentProperty(Identifier = IdentifierType.EdgeFrom)]
         public string PresynapticNeuronId
         {
             get
             {
-                return this.presynapticNeuronId;
+                return Terminal.EdgePrefix + this.presynapticNeuronIdCore;
             }
             set
             {
-                this.presynapticNeuronId = value;
+                this.presynapticNeuronIdCore = value.Substring(Terminal.EdgePrefix.Length);
             }
         }
 
-        private string postsynapticNeuronId;
+        private string postsynapticNeuronIdCore;
+        [DocumentProperty(IgnoreProperty = true)]
+        public string PostsynapticNeuronIdCore
+        {
+            get { return postsynapticNeuronIdCore; }
+            set { postsynapticNeuronIdCore = value; }
+        }
+
         [DocumentProperty(Identifier = IdentifierType.EdgeTo)]
         public string PostsynapticNeuronId
         {
             get
             {
-                return this.postsynapticNeuronId;
+                return Terminal.EdgePrefix + this.postsynapticNeuronIdCore;
             }
             set
             {
-                this.postsynapticNeuronId = value;
+                this.postsynapticNeuronIdCore = value.Substring(Terminal.EdgePrefix.Length);
             }
         }
 
@@ -62,11 +81,17 @@ namespace ei8.Cortex.Graph.Domain.Model
             get { return strength; }
             set { strength = value; }
         }
-        
-        public string Timestamp { get; set; }
 
-        public string AuthorId { get; set; }
+        public string CreationTimestamp { get => this.creationTimestamp; set => this.LastModificationTimestamp = this.creationTimestamp = value; }
+
+        public string CreationAuthorId { get => this.creationAuthorId; set => this.LastModificationAuthorId = this.creationAuthorId = value; }
+
+        public string LastModificationTimestamp { get; set; }
+
+        public string LastModificationAuthorId { get; set; }
 
         public int Version { get; set; }
+
+        public bool Active { get; set; }
     }
 }
