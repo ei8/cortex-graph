@@ -36,6 +36,8 @@ namespace ei8.Cortex.Graph.Domain.Model
 
         public string RegionId { get; set; }
 
+        public string ExternalReferenceUrl { get; set; }
+
         public int Version { get; set; }
 
         public bool Active { get; set; }

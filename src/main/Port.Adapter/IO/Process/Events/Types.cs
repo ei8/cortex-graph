@@ -65,5 +65,16 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Process.Events
                 Timestamp
             }
         }
+
+        public struct ExternalReference
+        {
+            public enum UrlChanged
+            {
+                Id,
+                Url,                
+                Version,
+                Timestamp
+            }
+        }
     }
 }

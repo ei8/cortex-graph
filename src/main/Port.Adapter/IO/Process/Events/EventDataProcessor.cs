@@ -113,6 +113,42 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Process.Events
 
                     result = true;
                     break;
+                case "UrlChanged":
+                    // if neuron
+                    n = await neuronRepository.Get(
+                        Guid.Parse(JsonHelper.GetRequiredValue<string>(jd, nameof(EventDataFields.ExternalReference.UrlChanged.Id)))
+                        );
+                    if (n != null)
+                    {
+                        n.ExternalReferenceUrl = JsonHelper.GetRequiredValue<string>(jd, nameof(EventDataFields.ExternalReference.UrlChanged.Url));
+                        n.Version = JsonHelper.GetRequiredValue<int>(jd, nameof(EventDataFields.ExternalReference.UrlChanged.Version));
+                        n.LastModificationTimestamp = JsonHelper.GetRequiredValue<string>(jd, nameof(EventDataFields.ExternalReference.UrlChanged.Timestamp));
+                        n.LastModificationAuthorId = authorId;
+                        await neuronRepository.Save(n);
+                    }
+
+                    t = await terminalRepository.Get(
+                        Guid.Parse(JsonHelper.GetRequiredValue<string>(jd, nameof(EventDataFields.ExternalReference.UrlChanged.Id)))
+                        );
+
+                    if (t != null)
+                    {
+                        changeTimestamp = JsonHelper.GetRequiredValue<string>(jd, nameof(EventDataFields.ExternalReference.UrlChanged.Timestamp));
+                        
+                        t.ExternalReferenceUrl = JsonHelper.GetRequiredValue<string>(jd, nameof(EventDataFields.ExternalReference.UrlChanged.Url));
+                        t.Version = JsonHelper.GetRequiredValue<int>(jd, nameof(EventDataFields.ExternalReference.UrlChanged.Version));
+                        t.LastModificationTimestamp = changeTimestamp;
+                        t.LastModificationAuthorId = authorId;                        
+                        await terminalRepository.Save(t);
+
+                        n = await neuronRepository.Get(Guid.Parse(t.PresynapticNeuronIdCore));
+                        n.UnifiedLastModificationTimestamp = changeTimestamp;
+                        n.UnifiedLastModificationAuthorId = authorId;
+                        await neuronRepository.Save(n);
+                    }
+
+                    result = true;
+                    break;
             }
 
             return result;
