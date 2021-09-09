@@ -1,28 +1,26 @@
 ﻿using ei8.Cortex.Graph.Common;
-using ei8.Cortex.Graph.Domain.Model;
 using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using CommonTerminal = ei8.Cortex.Graph.Common.Terminal;
 
 namespace ei8.Cortex.Graph.Application
 {
     public class TerminalQueryService : ITerminalQueryService
     {
-        private readonly ITerminalRepository terminalRepository;
+        private readonly Domain.Model.ITerminalRepository terminalRepository;
 
-        public TerminalQueryService(ITerminalRepository terminalRepository)
+        public TerminalQueryService(Domain.Model.ITerminalRepository terminalRepository)
         {
             this.terminalRepository = terminalRepository;
         }
 
-        public async Task<CommonTerminal> GetTerminalById(string id, NeuronQuery neuronQuery, CancellationToken token = default(CancellationToken))
+        public async Task<QueryResult> GetTerminalById(string id, NeuronQuery neuronQuery, CancellationToken token = default(CancellationToken))
         {
-            CommonTerminal result = null;
+            Common.QueryResult result = null;
 
             await this.terminalRepository.Initialize();
-            result = (await this.terminalRepository.Get(Guid.Parse(id), neuronQuery, token))?.ToCommon();
+            result = (await this.terminalRepository.Get(Guid.Parse(id), neuronQuery, token))?.ToCommon(null);
 
             return result;
         }

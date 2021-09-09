@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using ei8.Cortex.Graph.Application;
 using ei8.Cortex.Graph.Domain.Model;
+using System.Linq;
 
 namespace ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
 {
@@ -27,12 +28,16 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
 
         public async Task<Terminal> Get(Guid guid, CancellationToken cancellationToken = default(CancellationToken))
         {
-            return await this.Get(guid, new Graph.Common.NeuronQuery(), cancellationToken);
+            return (await this.Get(guid, new Graph.Common.NeuronQuery(), cancellationToken)).Neurons.FirstOrDefault()?.Terminal;
         }
 
-        public async Task<Terminal> Get(Guid guid, Graph.Common.NeuronQuery neuronQuery, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<QueryResult> Get(Guid guid, Graph.Common.NeuronQuery neuronQuery, CancellationToken cancellationToken = default(CancellationToken))
         {
-            Terminal result = null;
+            Domain.Model.QueryResult result = new Domain.Model.QueryResult()
+                {
+                    Count = 0,
+                    Neurons = new Domain.Model.NeuronResult[0]
+                };
             NeuronRepository.FillWithDefaults(neuronQuery, this.settingsService);
 
             using (var db = ArangoDatabase.CreateWithSetting(this.settingsService.DatabaseName))
@@ -48,7 +53,15 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
                             )
                         )
                     )
-                    result = t.CloneExcludeSynapticPrefix();
+                    result = new Domain.Model.QueryResult()
+                    {
+                        Count = 1,
+                        Neurons = new Domain.Model.NeuronResult[] { 
+                            new NeuronResult() {
+                                Terminal = t.CloneExcludeSynapticPrefix()
+                            }
+                        }
+                    };
             }
 
             return result;

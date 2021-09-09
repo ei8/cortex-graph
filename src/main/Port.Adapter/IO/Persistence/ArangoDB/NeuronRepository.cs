@@ -253,6 +253,16 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
             // RegionIdEqualsNot
             NeuronRepository.ExtractFilters(neuronQuery.RegionIdNot, nameof(NeuronQuery.RegionIdNot), valueBuilder, selector, queryParameters, queryFiltersBuilder, "||", "NOT");
 
+            valueBuilder = s => $"%{s}%";
+            selector = (f, ls, s) => $"Upper(n.ExternalReferenceUrl) LIKE Upper(@{f + (ls.IndexOf(s) + 1)})";
+            // ExternalReferenceUrlContains
+            NeuronRepository.ExtractFilters(neuronQuery.ExternalReferenceUrlContains, nameof(NeuronQuery.ExternalReferenceUrlContains), valueBuilder, selector, queryParameters, queryFiltersBuilder, "&&");
+
+            valueBuilder = s => s;
+            selector = (f, ls, s) => $"n.ExternalReferenceUrl == @{f + (ls.IndexOf(s) + 1)}";
+            // ExternalReferenceUrl
+            NeuronRepository.ExtractFilters(neuronQuery.ExternalReferenceUrl, nameof(NeuronQuery.ExternalReferenceUrl), valueBuilder, selector, queryParameters, queryFiltersBuilder, "||");
+
             var neuronAuthorRegion = @"
                         LET neuronCreationAuthorTag = (
                             FOR neuronAuthorNeuron in Neuron

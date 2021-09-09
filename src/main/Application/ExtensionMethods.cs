@@ -115,11 +115,16 @@ namespace ei8.Cortex.Graph.Application
                             {
                                 result = new Common.NeuronResult();
 
-                                // If terminal is set but neuron is not set, terminal is targetting a deactivated neuron
-                                result.Tag = "[Not found]";
-                                result.Id = value.Terminal.PostsynapticNeuronIdCore.ToUpper() == centralId.ToUpper() ?
-                                    value.Terminal.PresynapticNeuronIdCore :
-                                    value.Terminal.PostsynapticNeuronIdCore;
+                                // If terminal is set but neuron is not set, terminal may be
+                                // targetting a deactivated neuron
+                                // or query is for Terminal only
+                                if (!string.IsNullOrWhiteSpace(centralId))
+                                {
+                                    result.Tag = "[Not found]";
+                                    result.Id = value.Terminal.PostsynapticNeuronIdCore.ToUpper() == centralId.ToUpper() ?
+                                        value.Terminal.PresynapticNeuronIdCore :
+                                        value.Terminal.PostsynapticNeuronIdCore;
+                                }
                             }
 
                             result.Terminal = value.Terminal.ToCommon();

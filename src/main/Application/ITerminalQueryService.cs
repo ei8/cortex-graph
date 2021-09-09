@@ -9,6 +9,6 @@ namespace ei8.Cortex.Graph.Application
 {
     public interface ITerminalQueryService
     {
-        Task<Terminal> GetTerminalById(string id, NeuronQuery neuronQuery, CancellationToken token = default(CancellationToken));
+        Task<QueryResult> GetTerminalById(string id, NeuronQuery neuronQuery, CancellationToken token = default(CancellationToken));
     }
 }
