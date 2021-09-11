@@ -25,7 +25,7 @@ namespace ei8.Cortex.Graph.Application
                         neuronQuery,
                         token
                     )
-                ).ToCommon(null);
+                ).ToCommon();
         }
 
         public async Task<Common.QueryResult> GetNeurons(string centralId, NeuronQuery neuronQuery, CancellationToken token = default(CancellationToken))
@@ -56,7 +56,7 @@ namespace ei8.Cortex.Graph.Application
                     neuronQuery,
                     token
                     )
-                ).ToCommon(null);
+                ).ToCommon();
 
 
             return result;

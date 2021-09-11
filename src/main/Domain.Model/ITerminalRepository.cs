@@ -11,6 +11,6 @@ namespace ei8.Cortex.Graph.Domain.Model
     {
         Task<QueryResult> Get(Guid guid, NeuronQuery neuronQuery, CancellationToken cancellationToken = default(CancellationToken));
 
-        // TODO: Task<QueryResult> GetAll(NeuronQuery neuronQuery, CancellationToken token = default(CancellationToken));
+        Task<QueryResult> GetAll(NeuronQuery neuronQuery, CancellationToken token = default(CancellationToken));
     }
 }

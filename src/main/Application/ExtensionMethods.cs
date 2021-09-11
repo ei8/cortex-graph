@@ -9,7 +9,7 @@ namespace ei8.Cortex.Graph.Application
 {
     public static class ExtensionMethods
     {
-        public static Common.QueryResult ToCommon(this Domain.Model.QueryResult value, string centralId)
+        public static Common.QueryResult ToCommon(this Domain.Model.QueryResult value, string centralId = null)
         {
             Common.QueryResult result = new Common.QueryResult();
 
@@ -53,6 +53,7 @@ namespace ei8.Cortex.Graph.Application
             {
                 Id = value.RegionId
             };
+            result.ExternalReferenceUrl = value.ExternalReferenceUrl;
             result.Version = value.Version;
             result.Active = value.Active;
 
@@ -68,6 +69,7 @@ namespace ei8.Cortex.Graph.Application
             result.PostsynapticNeuronId = value.PostsynapticNeuronIdCore;
             result.Effect = ((int)value.Effect).ToString();
             result.Strength = value.Strength.ToString();
+            result.ExternalReferenceUrl = value.ExternalReferenceUrl;
             result.Version = value.Version;
             result.Creation = new AuthorEventInfo()
             {

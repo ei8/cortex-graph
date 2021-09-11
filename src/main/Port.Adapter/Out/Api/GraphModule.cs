@@ -90,6 +90,17 @@ namespace ei8.Cortex.Graph.Port.Adapter.Out.Api
                 );
             }
             );
+
+            this.Get("/terminals", async (parameters) =>
+            {
+                return await GraphModule.ProcessRequest(async () =>
+                    {
+                        var nv = await terminalQueryService.GetTerminals(GraphModule.ExtractQuery(this.Request.Query));
+                        return new TextResponse(JsonConvert.SerializeObject(nv));
+                    }
+                );
+            }
+            );
         }
 
         private static NeuronQuery ExtractQuery(dynamic query)
@@ -112,6 +123,8 @@ namespace ei8.Cortex.Graph.Port.Adapter.Out.Api
             nq.TerminalActiveValues = GraphModule.GetNullableEnumValue<ActiveValues>("tactive", query);
             nq.SortBy = GraphModule.GetNullableEnumValue<SortByValue>("sortby", query);
             nq.SortOrder = GraphModule.GetNullableEnumValue<SortOrderValue>("sortorder", query);
+            nq.ExternalReferenceUrl = GraphModule.GetQueryArrayOrDefault(query, "erurl");
+            nq.ExternalReferenceUrlContains = GraphModule.GetQueryArrayOrDefault(query, "erurlcontains");
             return nq;
         }
 

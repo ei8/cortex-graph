@@ -19,6 +19,7 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
                             terminal.Strength
                         )
             {
+                ExternalReferenceUrl = terminal.ExternalReferenceUrl,
                 Version = terminal.Version,
                 CreationTimestamp = terminal.CreationTimestamp,
                 CreationAuthorId = terminal.CreationAuthorId,

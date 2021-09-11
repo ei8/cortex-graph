@@ -6,6 +6,9 @@ using System.Threading.Tasks;
 using ei8.Cortex.Graph.Application;
 using ei8.Cortex.Graph.Domain.Model;
 using System.Linq;
+using System.Collections.Generic;
+using ArangoDB.Client.Data;
+using System.Text;
 
 namespace ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
 {
@@ -65,6 +68,126 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
             }
 
             return result;
+        }
+
+        public async Task<QueryResult> GetAll(Graph.Common.NeuronQuery neuronQuery, CancellationToken token = default)
+        {
+            Domain.Model.QueryResult result = null;
+            NeuronRepository.FillWithDefaults(neuronQuery, this.settingsService);
+
+            result = TerminalRepository.GetTerminalResults(
+                this.settingsService.DatabaseName,                
+                neuronQuery,
+                token
+                );
+
+            return result;
+        }
+
+        private static Domain.Model.QueryResult GetTerminalResults(string settingName, Graph.Common.NeuronQuery neuronQuery, CancellationToken token = default(CancellationToken))
+        {
+            Domain.Model.QueryResult result = null;
+            
+            using (var db = ArangoDatabase.CreateWithSetting(settingName))
+            {                
+                var queryResult = db.CreateStatement<Domain.Model.NeuronResult>(
+                    TerminalRepository.CreateQuery(neuronQuery, out List<QueryParameter> queryParameters),
+                    queryParameters, 
+                    options: new QueryOption() { FullCount = true }
+                    );
+                var neurons = queryResult.AsEnumerable().ToArray();
+                neurons.ToList().ForEach(nr => nr.Terminal = nr.Terminal.CloneExcludeSynapticPrefix());
+
+                var fullCount = (int) queryResult.Statistics.Extra.Stats.FullCount;
+
+                if (
+                    neuronQuery.Page.Value != 1 &&
+                    fullCount == NeuronRepository.CalculateOffset(neuronQuery.Page.Value, neuronQuery.PageSize.Value) &&
+                    neurons.Length == 0
+                    )
+                    throw new ArgumentOutOfRangeException("Specified/Default Page is invalid.");
+
+                result = new Domain.Model.QueryResult()
+                {
+                    Count = fullCount,
+                    Neurons = neurons
+                };
+            }
+
+            return result;
+        }
+
+        private static string CreateQuery(Graph.Common.NeuronQuery neuronQuery, out List<QueryParameter> queryParameters)
+        {
+            queryParameters = new List<QueryParameter>();
+            var queryFiltersBuilder = new StringBuilder();
+            var queryStringBuilder = new StringBuilder();
+
+            Func<string, string> valueBuilder = s => $"Terminal/{s}";
+            Func<string, List<string>, string, string> selector = (f, ls, s) => $"t._id == @{f + (ls.IndexOf(s) + 1)}";
+            // IdEquals
+            NeuronRepository.ExtractFilters(neuronQuery.Id, nameof(Graph.Common.NeuronQuery.Id), valueBuilder, selector, queryParameters, queryFiltersBuilder, "||");
+            // IdEqualsNot
+            NeuronRepository.ExtractFilters(neuronQuery.IdNot, nameof(Graph.Common.NeuronQuery.IdNot), valueBuilder, selector, queryParameters, queryFiltersBuilder, "||", "NOT");
+
+            valueBuilder = s => $"%{s}%";
+            selector = (f, ls, s) => $"Upper(t.ExternalReferenceUrl) LIKE Upper(@{f + (ls.IndexOf(s) + 1)})";
+            // ExternalReferenceUrlContains
+            NeuronRepository.ExtractFilters(neuronQuery.ExternalReferenceUrlContains, nameof(Graph.Common.NeuronQuery.ExternalReferenceUrlContains), valueBuilder, selector, queryParameters, queryFiltersBuilder, "&&");
+
+            valueBuilder = s => s;
+            selector = (f, ls, s) => $"t.ExternalReferenceUrl == @{f + (ls.IndexOf(s) + 1)}";
+            // ExternalReferenceUrl
+            NeuronRepository.ExtractFilters(neuronQuery.ExternalReferenceUrl, nameof(Graph.Common.NeuronQuery.ExternalReferenceUrl), valueBuilder, selector, queryParameters, queryFiltersBuilder, "||");
+
+            var terminalAuthor = @"
+                        LET terminalCreationAuthorTag = (
+                            FOR neuronAuthorNeuron in Neuron
+                            FILTER neuronAuthorNeuron._id == CONCAT(""Neuron/"", t.CreationAuthorId)
+                            return neuronAuthorNeuron.Tag
+                        )
+                        LET terminalLastModificationAuthorTag = (
+                            FOR neuronAuthorNeuron in Neuron
+                            FILTER neuronAuthorNeuron._id == CONCAT(""Neuron/"", t.LastModificationAuthorId)
+                            return neuronAuthorNeuron.Tag
+                        )";
+            var terminalAuthorReturn = ", TerminalCreationAuthorTag: FIRST(terminalCreationAuthorTag), TerminalLastModificationAuthorTag: FIRST(terminalLastModificationAuthorTag)";
+
+            // Terminal Active
+            NeuronRepository.AddActiveFilter("t", neuronQuery.NeuronActiveValues.Value, queryFiltersBuilder);
+
+            queryStringBuilder.Append($@"
+                FOR t IN Terminal
+                    {queryFiltersBuilder}
+                    {terminalAuthor}
+                        RETURN {{ Neuron: {{}}, Terminal: t{terminalAuthorReturn} }}");
+
+            // Sort and Limit
+            var lastReturnIndex = queryStringBuilder.ToString().ToUpper().LastIndexOf("RETURN");
+            queryStringBuilder.Remove(lastReturnIndex, 6);
+
+            string sortFieldName = "t.LastModificationTimestamp";
+            string sortOrder = neuronQuery.SortOrder.HasValue ?
+                neuronQuery.SortOrder.Value.ToEnumString() :
+                "ASC";
+
+            if (neuronQuery.SortBy.HasValue)
+            {
+                sortFieldName = neuronQuery.SortBy.Value.ToEnumString();
+
+                if (sortFieldName.StartsWith("Neuron."))
+                    sortFieldName = sortFieldName.Replace("Neuron.", "n.");
+                else if (sortFieldName.StartsWith("Terminal."))
+                    sortFieldName = sortFieldName.Replace("Terminal.", "t.");
+                else
+                    sortFieldName = sortFieldName[0].ToString().ToLower() + sortFieldName.Substring(1);
+            }
+
+            queryStringBuilder.Insert(lastReturnIndex, $"SORT {sortFieldName} {sortOrder} LIMIT @offset, @count RETURN");
+            queryParameters.Add(new QueryParameter() { Name = "offset", Value = NeuronRepository.CalculateOffset(neuronQuery.Page.Value, neuronQuery.PageSize.Value) });
+            queryParameters.Add(new QueryParameter() { Name = "count", Value = neuronQuery.PageSize.Value });
+
+            return queryStringBuilder.ToString();
         }
 
         public async Task Initialize()

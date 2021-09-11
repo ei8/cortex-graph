@@ -432,7 +432,7 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
             return queryStringBuilder.ToString();
         }
 
-        private static int CalculateOffset(int page, int pageSize)
+        internal static int CalculateOffset(int page, int pageSize)
         {
             return ((page - 1) * pageSize);
         }
@@ -455,7 +455,7 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
             }
         }
 
-        private static void ExtractFilters(IEnumerable<string> field, string fieldName, Func<string, string> valueBuilder, Func<string, List<string>, string, string> selector, List<QueryParameter> queryParameters, StringBuilder queryFiltersBuilder, string filterJoiner, string logicWrapper = "")
+        internal static void ExtractFilters(IEnumerable<string> field, string fieldName, Func<string, string> valueBuilder, Func<string, List<string>, string, string> selector, List<QueryParameter> queryParameters, StringBuilder queryFiltersBuilder, string filterJoiner, string logicWrapper = "")
         {
             if (field != null)
             {
@@ -477,7 +477,7 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
             }
         }
 
-        private static void AddActiveFilter(string variableName, ActiveValues activeValues, StringBuilder queryFiltersBuilder)
+        internal static void AddActiveFilter(string variableName, ActiveValues activeValues, StringBuilder queryFiltersBuilder)
         {
             if (Helper.TryConvert(activeValues, out bool result))
             {
