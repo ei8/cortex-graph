@@ -35,6 +35,5 @@ namespace ei8.Cortex.Graph.Application
                     )
                 ).ToCommon();
         }
-
     }
 }

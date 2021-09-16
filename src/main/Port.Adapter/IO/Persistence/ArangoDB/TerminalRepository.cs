@@ -175,8 +175,8 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
             {
                 sortFieldName = neuronQuery.SortBy.Value.ToEnumString();
 
-                if (sortFieldName.StartsWith("Neuron."))
-                    sortFieldName = sortFieldName.Replace("Neuron.", "n.");
+                if (sortFieldName.StartsWith("Neuron"))
+                    throw new ArgumentException($"Unable to sort by '{sortFieldName}' since this is a Terminal endpoint.");
                 else if (sortFieldName.StartsWith("Terminal."))
                     sortFieldName = sortFieldName.Replace("Terminal.", "t.");
                 else
