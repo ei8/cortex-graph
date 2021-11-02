@@ -25,10 +25,10 @@ namespace ei8.Cortex.Graph.Port.Adapter.Out.Api
             this.Get("/neurons", async (parameters) =>
             {
                 return await GraphModule.ProcessRequest(async () =>
-                    {
-                        var nv = await neuronQueryService.GetNeurons(GraphModule.ExtractQuery(this.Request.Query));
-                        return new TextResponse(JsonConvert.SerializeObject(nv));
-                    }
+                {
+                    var nv = await neuronQueryService.GetNeurons(GraphModule.ParseNeuronQueryOrEmpty(this.Request.Url.Query));
+                    return new TextResponse(JsonConvert.SerializeObject(nv));
+                }
                 );
             }
             );
@@ -39,7 +39,7 @@ namespace ei8.Cortex.Graph.Port.Adapter.Out.Api
                 {
                     var nv = await neuronQueryService.GetNeuronById(
                         parameters.neuronid,
-                        GraphModule.ExtractQuery(this.Request.Query)
+                        GraphModule.ParseNeuronQueryOrEmpty(this.Request.Url.Query)
                         );
                     return new TextResponse(JsonConvert.SerializeObject(nv));
                 }
@@ -53,7 +53,7 @@ namespace ei8.Cortex.Graph.Port.Adapter.Out.Api
                     {
                         var nv = await neuronQueryService.GetNeurons(
                             parameters.centralid,
-                            GraphModule.ExtractQuery(this.Request.Query)
+                            GraphModule.ParseNeuronQueryOrEmpty(this.Request.Url.Query)
                             );
 
                         return new TextResponse(JsonConvert.SerializeObject(nv));
@@ -69,7 +69,7 @@ namespace ei8.Cortex.Graph.Port.Adapter.Out.Api
                         var nv = await neuronQueryService.GetNeuronById(
                             parameters.neuronid,
                             parameters.centralid,
-                            GraphModule.ExtractQuery(this.Request.Query)
+                            GraphModule.ParseNeuronQueryOrEmpty(this.Request.Url.Query)
                             );
                         return new TextResponse(JsonConvert.SerializeObject(nv));
                     }
@@ -83,7 +83,7 @@ namespace ei8.Cortex.Graph.Port.Adapter.Out.Api
                 {
                     var nv = await terminalQueryService.GetTerminalById(
                         parameters.terminalid,
-                        GraphModule.ExtractQuery(this.Request.Query)
+                        GraphModule.ParseNeuronQueryOrEmpty(this.Request.Url.Query)
                         );
                     return new TextResponse(JsonConvert.SerializeObject(nv));
                 }
@@ -95,7 +95,7 @@ namespace ei8.Cortex.Graph.Port.Adapter.Out.Api
             {
                 return await GraphModule.ProcessRequest(async () =>
                     {
-                        var nv = await terminalQueryService.GetTerminals(GraphModule.ExtractQuery(this.Request.Query));
+                        var nv = await terminalQueryService.GetTerminals(GraphModule.ParseNeuronQueryOrEmpty(this.Request.Url.Query));
                         return new TextResponse(JsonConvert.SerializeObject(nv));
                     }
                 );
@@ -103,54 +103,9 @@ namespace ei8.Cortex.Graph.Port.Adapter.Out.Api
             );
         }
 
-        private static NeuronQuery ExtractQuery(dynamic query)
+        private static NeuronQuery ParseNeuronQueryOrEmpty(string queryString)
         {
-            var nq = new NeuronQuery();
-            nq.TagContains = GraphModule.GetQueryArrayOrDefault(query, nameof(NeuronQuery.TagContains));
-            nq.TagContainsNot = GraphModule.GetQueryArrayOrDefault(query, nameof(NeuronQuery.TagContainsNot));
-            nq.Id = GraphModule.GetQueryArrayOrDefault(query, nameof(NeuronQuery.Id));
-            nq.IdNot = GraphModule.GetQueryArrayOrDefault(query, nameof(NeuronQuery.IdNot));
-            nq.Postsynaptic = GraphModule.GetQueryArrayOrDefault(query, nameof(NeuronQuery.Postsynaptic));
-            nq.PostsynapticNot = GraphModule.GetQueryArrayOrDefault(query, nameof(NeuronQuery.PostsynapticNot));
-            nq.Presynaptic = GraphModule.GetQueryArrayOrDefault(query, nameof(NeuronQuery.Presynaptic));
-            nq.PresynapticNot = GraphModule.GetQueryArrayOrDefault(query, nameof(NeuronQuery.PresynapticNot));
-            nq.RegionId = GraphModule.GetQueryArrayOrDefault(query, nameof(NeuronQuery.RegionId));
-            nq.RegionIdNot = GraphModule.GetQueryArrayOrDefault(query, nameof(NeuronQuery.RegionIdNot));
-            nq.RelativeValues = GraphModule.GetNullableEnumValue<RelativeValues>("relative", query);
-            nq.PageSize = GraphModule.GetNullableIntValue("pagesize", query);
-            nq.Page = GraphModule.GetNullableIntValue("page", query);
-            nq.NeuronActiveValues = GraphModule.GetNullableEnumValue<ActiveValues>("nactive", query);
-            nq.TerminalActiveValues = GraphModule.GetNullableEnumValue<ActiveValues>("tactive", query);
-            nq.SortBy = GraphModule.GetNullableEnumValue<SortByValue>("sortby", query);
-            nq.SortOrder = GraphModule.GetNullableEnumValue<SortOrderValue>("sortorder", query);
-            nq.ExternalReferenceUrl = GraphModule.GetQueryArrayOrDefault(query, "erurl");
-            nq.ExternalReferenceUrlContains = GraphModule.GetQueryArrayOrDefault(query, "erurlcontains");
-            return nq;
-        }
-
-        // TODO: Transfer to common
-        private static int? GetNullableIntValue(string fieldName, dynamic query)
-        {
-            return query[fieldName].HasValue ? int.Parse(query[fieldName].ToString()) : null;
-        }
-
-        // TODO: Transfer to common
-        private static T? GetNullableEnumValue<T>(string fieldName, dynamic query) where T : struct, Enum
-        {
-            return query[fieldName].HasValue ? (T?)Enum.Parse(typeof(T), query[fieldName].ToString(), true) : null;
-        }
-
-        // TODO: Transfer to common
-        private static IEnumerable<string> GetQueryArrayOrDefault(dynamic query, string parameterName)
-        {
-            var parameterNameExclamation = parameterName.Replace("Not", "!");
-            string[] stringArray = query[parameterName].HasValue ? 
-                query[parameterName].ToString().Split(",") : 
-                    query[parameterNameExclamation].HasValue ?
-                    query[parameterNameExclamation].ToString().Split(",") :
-                    null;
-
-            return stringArray != null ? stringArray.Select(s => s != "\0" ? s : null) : stringArray;
+            return NeuronQuery.TryParse(queryString, out NeuronQuery query) ? query : new NeuronQuery();
         }
 
         internal static async Task<Response> ProcessRequest(Func<Task<Response>> action)

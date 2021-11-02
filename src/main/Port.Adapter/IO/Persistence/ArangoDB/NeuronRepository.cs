@@ -233,7 +233,12 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
             var queryStringBuilder = new StringBuilder();
 
             Func<string, string> valueBuilder = s => $"%{s}%";
-            Func<string, List<string>, string, string> selector = (f, ls, s) => $"Upper(n.Tag) LIKE Upper(@{f + (ls.IndexOf(s) + 1)})";
+            Func<string, List<string>, string, string> selector = 
+                (f, ls, s) => 
+                neuronQuery.TagContainsIgnoreWhitespace.HasValue && neuronQuery.TagContainsIgnoreWhitespace.Value ?
+                    @$"LIKE(SUBSTITUTE(n.Tag, [""\\n"", "" ""]), SUBSTITUTE(@{f + (ls.IndexOf(s) + 1)}, [""\\n"", "" ""]), true)" :
+                    $"Upper(n.Tag) LIKE Upper(@{f + (ls.IndexOf(s) + 1)})";
+
             // TagContains
             NeuronRepository.ExtractFilters(neuronQuery.TagContains, nameof(NeuronQuery.TagContains), valueBuilder, selector, queryParameters, queryFiltersBuilder, "&&");
             // TagContainsNot
@@ -469,7 +474,8 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
                     new QueryParameter()
                     {
                         Name = fieldName + (idEqualsList.IndexOf(s) + 1),
-                        Value = valueBuilder(s)                         
+                        // allow null values (eg. regionid)
+                        Value = s != null ? valueBuilder(s).Replace(Environment.NewLine, @"\n") : s
                     }
                 ));
                 var filters = field.Select(f => selector(fieldName, idEqualsList, f));
