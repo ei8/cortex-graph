@@ -391,16 +391,16 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
 
             var preSynapticParamCount = queryParameters.Count;
             // Postsynaptic
-            NeuronRepository.ApplySynapticFilters(neuronQuery.Postsynaptic, nameof(NeuronQuery.Postsynaptic), queryParameters, queryStringBuilder);
+            NeuronRepository.ApplySynapticFilters(neuronQuery.Postsynaptic, nameof(NeuronQuery.Postsynaptic), queryParameters, queryStringBuilder, neuronQuery.TerminalActiveValues.Value);
 
             // PostsynapticNot
-            NeuronRepository.ApplySynapticFilters(neuronQuery.PostsynapticNot, nameof(NeuronQuery.PostsynapticNot), queryParameters, queryStringBuilder, false);
+            NeuronRepository.ApplySynapticFilters(neuronQuery.PostsynapticNot, nameof(NeuronQuery.PostsynapticNot), queryParameters, queryStringBuilder, neuronQuery.TerminalActiveValues.Value, false);
 
             // Presynaptic
-            NeuronRepository.ApplySynapticFilters(neuronQuery.Presynaptic, nameof(NeuronQuery.Presynaptic), queryParameters, queryStringBuilder);
+            NeuronRepository.ApplySynapticFilters(neuronQuery.Presynaptic, nameof(NeuronQuery.Presynaptic), queryParameters, queryStringBuilder, neuronQuery.TerminalActiveValues.Value);
 
             // PresynapticNot
-            NeuronRepository.ApplySynapticFilters(neuronQuery.PresynapticNot, nameof(NeuronQuery.PresynapticNot), queryParameters, queryStringBuilder, false);
+            NeuronRepository.ApplySynapticFilters(neuronQuery.PresynapticNot, nameof(NeuronQuery.PresynapticNot), queryParameters, queryStringBuilder, neuronQuery.TerminalActiveValues.Value, false);
 
             // Sort and Limit
             var lastReturnIndex = queryStringBuilder.ToString().ToUpper().LastIndexOf("RETURN");
@@ -442,13 +442,13 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
             return ((page - 1) * pageSize);
         }
 
-        private static void ApplySynapticFilters(IEnumerable<string> synapticsField, string synapticsFieldName, List<QueryParameter> queryParameters, StringBuilder queryStringBuilder, bool include = true)
+        private static void ApplySynapticFilters(IEnumerable<string> synapticsField, string synapticsFieldName, List<QueryParameter> queryParameters, StringBuilder queryStringBuilder, ActiveValues terminalActiveValues, bool include = true)
         {
             if (synapticsField != null)
             {
                 var synapticList = synapticsField.ToList();
                 synapticList.ForEach(s =>
-                    NeuronRepository.WrapQueryString(s, queryStringBuilder, synapticsFieldName, (synapticList.IndexOf(s) + 1), include)
+                    NeuronRepository.WrapQueryString(s, queryStringBuilder, synapticsFieldName, (synapticList.IndexOf(s) + 1), include, terminalActiveValues)
                     );
                 queryParameters.AddRange(synapticsField.Select(s =>
                     new QueryParameter()
@@ -496,7 +496,7 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
             }
         }
 
-        private static void WrapQueryString(string s, StringBuilder queryStringBuilder, string fieldName, int index, bool contains)
+        private static void WrapQueryString(string s, StringBuilder queryStringBuilder, string fieldName, int index, bool contains, ActiveValues terminalActiveValues)
         {
             string filter1 = string.Empty, 
                 filter2 = string.Empty;
@@ -515,10 +515,15 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
             }
 
             queryStringBuilder.Insert(0, "FOR n IN(");
+
+            string activeFilter = Helper.TryConvert(terminalActiveValues, out bool result) ?
+                $"&& t.Active == {result}" : 
+                string.Empty;
+
             queryStringBuilder.Append($@")
 LET terminalList = (
     FOR t IN Terminal
-    FILTER t._{filter1} == @{fieldName + index} && n.Neuron._id == t._{filter2}
+    FILTER t._{filter1} == @{fieldName + index} && n.Neuron._id == t._{filter2} {activeFilter}
     RETURN 1
 )
 FILTER LENGTH(terminalList) == {(contains ? "1" : "0")}  
