@@ -68,7 +68,7 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
 
         public async Task<Domain.Model.QueryResult> Get(Guid guid, NeuronQuery neuronQuery, CancellationToken cancellationToken = default(CancellationToken))
         {
-            return await this.GetRelativeCore(guid, null, neuronQuery, cancellationToken);            
+            return await this.GetRelativeCore(guid, null, neuronQuery, cancellationToken);
         }
 
         public async Task<Domain.Model.QueryResult> GetRelative(Guid guid, Guid centralGuid, NeuronQuery neuronQuery, CancellationToken token = default(CancellationToken))
@@ -134,7 +134,7 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
                 {
                     result = NeuronRepository.GetNeuronResults(centralGuid.Value, guid, this.settingsService.DatabaseName, neuronQuery, token);
                 }
-                
+
                 // KEEP: circular references will now be allowed 2018/10/24
                 // int c = db.Query()
                 //    .Traversal<Neuron, Terminal>(EdgePrefix + guid.ToString())
@@ -153,12 +153,12 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
         private static Domain.Model.QueryResult GetNeuronResults(Guid? centralGuid, Guid? relativeGuid, string settingName, NeuronQuery neuronQuery, CancellationToken token = default(CancellationToken))
         {
             Domain.Model.QueryResult result = null;
-            
+
             using (var db = ArangoDatabase.CreateWithSetting(settingName))
-            {                
+            {
                 var queryResult = db.CreateStatement<Domain.Model.NeuronResult>(
                     NeuronRepository.CreateQuery(centralGuid, relativeGuid, neuronQuery, out List<QueryParameter> queryParameters),
-                    queryParameters, 
+                    queryParameters,
                     options: new QueryOption() { FullCount = true }
                     );
                 var neurons = queryResult.AsEnumerable().ToArray();
@@ -166,7 +166,7 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
                 if (centralGuid.HasValue)
                     neurons.ToList().ForEach(nr => nr.Terminal = nr.Terminal.CloneExcludeSynapticPrefix());
 
-                var fullCount = (int) queryResult.Statistics.Extra.Stats.FullCount;
+                var fullCount = (int)queryResult.Statistics.Extra.Stats.FullCount;
 
                 if (
                     neuronQuery.Page.Value != 1 &&
@@ -218,7 +218,7 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
             result = NeuronRepository.GetNeuronResults(
                 centralGuid,
                 null,
-                this.settingsService.DatabaseName,                
+                this.settingsService.DatabaseName,
                 neuronQuery,
                 token
                 );
@@ -233,8 +233,8 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
             var queryStringBuilder = new StringBuilder();
 
             Func<string, string> valueBuilder = s => $"%{s}%";
-            Func<string, List<string>, string, string> selector = 
-                (f, ls, s) => 
+            Func<string, List<string>, string, string> selector =
+                (f, ls, s) =>
                 neuronQuery.TagContainsIgnoreWhitespace.HasValue && neuronQuery.TagContainsIgnoreWhitespace.Value ?
                     @$"LIKE(SUBSTITUTE(n.Tag, [""\\n"", "" ""]), SUBSTITUTE(@{f + (ls.IndexOf(s) + 1)}, [""\\n"", "" ""]), true)" :
                     $"Upper(n.Tag) LIKE Upper(@{f + (ls.IndexOf(s) + 1)})";
@@ -389,7 +389,11 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
                     });
             }
 
-            var preSynapticParamCount = queryParameters.Count;
+            var previousSynapticParamCount = queryParameters.Count;
+            
+            // Postsynaptic External Reference URL
+            NeuronRepository.ApplyPostExRefUrlFilters(neuronQuery.PostsynapticExternalReferenceUrl, nameof(NeuronQuery.PostsynapticExternalReferenceUrl), queryParameters, queryStringBuilder);
+
             // Postsynaptic
             NeuronRepository.ApplySynapticFilters(neuronQuery.Postsynaptic, nameof(NeuronQuery.Postsynaptic), queryParameters, queryStringBuilder, neuronQuery.TerminalActiveValues.Value);
 
@@ -407,7 +411,7 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
             queryStringBuilder.Remove(lastReturnIndex, 6);
 
             // were synaptic filters applied?
-            bool synapticFiltersApplied = preSynapticParamCount < queryParameters.Count;
+            bool synapticFiltersApplied = previousSynapticParamCount < queryParameters.Count;
             string sortFieldName = synapticFiltersApplied ? "n.Neuron.Tag" : "n.Tag";
             string sortOrder = neuronQuery.SortOrder.HasValue ?
                 neuronQuery.SortOrder.Value.ToEnumString() :
@@ -498,7 +502,7 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
 
         private static void WrapQueryString(string s, StringBuilder queryStringBuilder, string fieldName, int index, bool contains, ActiveValues terminalActiveValues)
         {
-            string filter1 = string.Empty, 
+            string filter1 = string.Empty,
                 filter2 = string.Empty;
             switch (fieldName)
             {
@@ -517,9 +521,11 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
             queryStringBuilder.Insert(0, "FOR n IN(");
 
             string activeFilter = Helper.TryConvert(terminalActiveValues, out bool result) ?
-                $"&& t.Active == {result}" : 
+                $"&& t.Active == {result}" :
                 string.Empty;
 
+            // 1. get terminals linked to specified neuron
+            // 2. get neurons linked to terminals in terminalList
             queryStringBuilder.Append($@")
 LET terminalList = (
     FOR t IN Terminal
@@ -528,6 +534,35 @@ LET terminalList = (
 )
 FILTER LENGTH(terminalList) == {(contains ? "1" : "0")}  
     RETURN n");
+        }
+
+        private static void ApplyPostExRefUrlFilters(IEnumerable<string> postsynapticExternalReferenceUrlField, string postsynapticExternalReferenceUrlFieldName, List<QueryParameter> queryParameters, StringBuilder queryStringBuilder)
+        {
+            if (postsynapticExternalReferenceUrlField != null)
+            {
+                var synapticList = postsynapticExternalReferenceUrlField.ToList();
+                synapticList.ForEach(s =>
+                {
+                    queryStringBuilder.Insert(0, "FOR n IN(");
+                    queryStringBuilder.Append($@")
+LET terminalList = (
+    FOR t IN Terminal
+        FOR n2 IN Neuron
+    FILTER t._to == n2._id && n.Neuron._id == t._from && n2.ExternalReferenceUrl == @{postsynapticExternalReferenceUrlFieldName + (synapticList.IndexOf(s) + 1)}
+    RETURN 1
+)
+FILTER LENGTH(terminalList) == 1  
+    RETURN n");
+                });
+
+                queryParameters.AddRange(postsynapticExternalReferenceUrlField.Select(s =>
+                    new QueryParameter()
+                    {
+                        Name = postsynapticExternalReferenceUrlFieldName + (synapticList.IndexOf(s) + 1),
+                        Value = s
+                    }
+                ));
+            }
         }
     }
 }
