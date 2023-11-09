@@ -6,7 +6,7 @@
     <RootNamespace>ei8.Cortex.Graph.Port.Adapter.Out.Api</RootNamespace>
     <ApplicationIcon />
     <OutputType>Exe</OutputType>
-    <StartupObject>ei8.Cortex.Graph.Port.Adapter.Out.Api.Program</StartupObject>
+    <StartupObject></StartupObject>
     <DockerComposeProjectPath>..\..\..\..\docker-compose.dcproj</DockerComposeProjectPath>
   </PropertyGroup>
 
@@ -17,9 +17,8 @@
   <ItemGroup>
     <PackageReference Include="ei8.Cortex.Graph.Common" Version="0.3.0" />
     <PackageReference Include="IdentityServer4.AccessTokenValidation" Version="2.6.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Owin" Version="6.0.16" />
-    <PackageReference Include="Nancy" Version="2.0.0-clinteastwood" />
-    <PackageReference Include="Nancy.Serialization.JsonNet" Version="2.0.0-clinteastwood" />
+    <PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" Version="6.5.0" />
+    <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="6.5.0" />
   </ItemGroup>
 
   <ItemGroup>
