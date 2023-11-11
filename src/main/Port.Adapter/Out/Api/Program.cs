@@ -27,8 +27,6 @@ builder.Services.AddHttpClient();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Add background services.
-
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
