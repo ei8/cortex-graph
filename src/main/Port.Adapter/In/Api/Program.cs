@@ -2,6 +2,8 @@
 using System.Net;
 using ei8.Cortex.Graph.Application;
 using ei8.Cortex.Graph.Domain.Model;
+using ei8.Cortex.Graph.Port.Adapter.Common;
+using ei8.Cortex.Graph.Port.Adapter.In.Api.BackgroundServices;
 using ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB;
 using ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Standard;
 using ei8.Cortex.Graph.Port.Adapter.IO.Process.Services;
@@ -30,6 +32,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 // Add background services.
+builder.Services.AddHostedService<GraphGenerationBackgroundService>();
 
 var app = builder.Build();
 
@@ -45,11 +48,17 @@ if (app.Environment.IsDevelopment())
 //app.UseHttpsRedirection();
 
 // Add endpoints here.
-app.MapPost("/cortex/graph/regenerate", async (Logger logger, IGraphGenerationApplicationService graphGenerationApplicationService) =>
+app.MapPost("/cortex/graph/regenerate", async (
+	Logger logger,
+	IGraphGenerationApplicationService graphGenerationApplicationService,
+	HttpContext context) =>
 {
 	try
 	{
-		await graphGenerationApplicationService.Begin();
+		var graphGenerationBackgroundService = context.RequestServices.GetHostedService<GraphGenerationBackgroundService>();
+		graphGenerationBackgroundService.Start();
+
+		//await graphGenerationApplicationService.Begin();
 		return Results.Ok();
 	}
 	catch (Exception ex)
@@ -61,11 +70,16 @@ app.MapPost("/cortex/graph/regenerate", async (Logger logger, IGraphGenerationAp
 	}
 });
 
-app.MapPost("/cortex/graph/resumegeneration", async (Logger logger, IGraphGenerationApplicationService graphGenerationApplicationService) =>
+app.MapPost("/cortex/graph/resumegeneration", async (
+	Logger logger,
+	IGraphGenerationApplicationService graphGenerationApplicationService,
+	HttpContext context) =>
 {
 	try
 	{
-		await graphGenerationApplicationService.Resume();
+		var graphGenerationBackgroundService = context.RequestServices.GetHostedService<GraphGenerationBackgroundService>();
+		graphGenerationBackgroundService.Stop();
+		//await graphGenerationApplicationService.Resume();
 
 		return Results.Ok();
 	}
