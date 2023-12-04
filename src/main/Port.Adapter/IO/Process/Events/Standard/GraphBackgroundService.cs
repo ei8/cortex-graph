@@ -10,7 +10,6 @@ using ei8.EventSourcing.Common;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using neurUL.Common.Domain.Model;
 using Polly;
 
 namespace ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Standard
@@ -89,7 +88,6 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Standard
 
 					await this.UpdateGraphAsync(
 						settingsService.EventSourcingOutBaseUrl,
-						GraphBackgroundService.StartPosition.ToString(),
 						neuronRepository, terminalRepository, settingsRepository);
 				}
 
@@ -118,7 +116,6 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Standard
 
 							await this.UpdateGraphAsync(
 								settingsService.EventSourcingOutBaseUrl,
-								this.lastPosition.ToString(),
 								neuronRepository, terminalRepository, settingsRepository);
 
 							await this.SetLastPositionAsync(settingsRepository);
@@ -149,18 +146,15 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Standard
 				this.lastPosition = GraphBackgroundService.StartPosition;
 		}
 
-		private async Task UpdateGraphAsync(string notificationLogBaseUrl, string position, INeuronRepository neuronRepository, ITerminalRepository terminalRepository, IRepository<Settings> settingsRepository)
+		private async Task UpdateGraphAsync(string notificationLogBaseUrl, INeuronRepository neuronRepository, ITerminalRepository terminalRepository, IRepository<Settings> settingsRepository)
 		{
-			AssertionConcern.AssertStateTrue(long.TryParse(position, out long lastPosition), $"Specified position value of '{position}' is not a valid integer (long).");
-			AssertionConcern.AssertMinimum(lastPosition, 0, nameof(position));
-
 			var eventSourcingUrl = notificationLogBaseUrl + "/";
 			var notificationClient = new HttpNotificationClient();
 			// get current log
 			var currentNotificationLog = await notificationClient.GetNotificationLog(eventSourcingUrl, string.Empty);
 			NotificationLog processingEventInfoLog;
 
-			if (lastPosition == GraphBackgroundService.StartPosition)
+			if (this.lastPosition == GraphBackgroundService.StartPosition)
 			{
 				// get first log from current
 				processingEventInfoLog = await notificationClient.GetNotificationLog(eventSourcingUrl, currentNotificationLog.FirstNotificationLogId);
@@ -168,7 +162,7 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Standard
 			else
 			{
 				processingEventInfoLog = currentNotificationLog;
-				while (lastPosition < processingEventInfoLog.DecodedNotificationLogId.Low)
+				while (this.lastPosition < processingEventInfoLog.DecodedNotificationLogId.Low)
 					processingEventInfoLog = await notificationClient.GetNotificationLog(eventSourcingUrl, processingEventInfoLog.PreviousNotificationLogId);
 			}
 
@@ -176,7 +170,7 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Standard
 			while (processingEventInfoLog.DecodedNotificationLogId.Low <= currentNotificationLog.DecodedNotificationLogId.Low)
 			{
 				foreach (Notification e in processingEventInfoLog.NotificationList)
-					if (e.SequenceId > lastPosition)
+					if (e.SequenceId > this.lastPosition)
 					{
 						var eventName = e.GetEventName();
 
@@ -185,11 +179,11 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Standard
 						if (await new EventDataProcessor().Process(neuronRepository, terminalRepository, eventName, e.Data, e.AuthorId))
 						{
 							// update current position
-							lastPosition = e.SequenceId;
+							this.lastPosition = e.SequenceId;
 
 							if (!processingEventInfoLog.HasNextNotificationLog && processingEventInfoLog.NotificationList.Last() == e)
 								await settingsRepository.Save(
-									new Settings() { Id = Guid.Empty.ToString(), LastPosition = lastPosition.ToString() }
+									new Settings() { Id = Guid.Empty.ToString(), LastPosition = this.lastPosition.ToString() }
 									);
 						}
 						else
