@@ -19,9 +19,10 @@ builder.Services.AddHttpClient();
 
 builder.Services.AddScoped<ISettingsService, SettingsService>();
 builder.Services.AddScoped<IRepository<Neuron>, NeuronRepository>();
+builder.Services.AddScoped<INeuronRepository, NeuronRepository>();
 builder.Services.AddScoped<IRepository<Terminal>, TerminalRepository>();
+builder.Services.AddScoped<ITerminalRepository, TerminalRepository>();
 builder.Services.AddScoped<IRepository<Settings>, SettingsRepository>();
-//builder.Services.AddSingleton<INotificationLogClient, StandardNotificationLogClient>();
 builder.Services.AddScoped<IGraphApplicationService, GraphApplicationService>();
 builder.Services.AddScoped<NLog.Logger>((_) => LogManager.GetCurrentClassLogger());
 
@@ -57,8 +58,7 @@ app.MapPost("/cortex/graph/regenerate", async (
 		await graphApplicationService.InitializeRepositoriesAsync();
 		await graphApplicationService.ClearRepositoriesAsync();
 
-		//var graphGenerationBackgroundService = context.RequestServices.GetHostedService<GraphGenerationBackgroundService>();
-		graphBackgroundService.Regenerate();
+		await graphBackgroundService.RegenerateAsync();
 
 		return Results.Ok();
 	}
@@ -80,7 +80,7 @@ app.MapPost("/cortex/graph/resumegeneration", async (
 	{
 		await graphApplicationService.InitializeRepositoriesAsync();
 
-		graphBackgroundService.ResumeGeneration();
+		await graphBackgroundService.ResumeGenerationAsync();
 
 		return Results.Ok();
 	}
@@ -95,12 +95,11 @@ app.MapPost("/cortex/graph/resumegeneration", async (
 
 app.MapPost("/cortex/graph/suspendgeneration", async (
 	Logger logger,
-	IGraphApplicationService graphApplicationService,
 	IGraphBackgroundService graphBackgroundService) =>
 {
 	try
 	{
-		graphBackgroundService.Suspend();
+		await graphBackgroundService.SuspendAsync();
 
 		return Results.Ok();
 	}

@@ -1,5 +1,4 @@
-﻿using System;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using ei8.Cortex.Graph.Domain.Model;
 
 namespace ei8.Cortex.Graph.Application
@@ -12,45 +11,14 @@ namespace ei8.Cortex.Graph.Application
 		private readonly IRepository<Terminal> terminalRepository;
 		private readonly IRepository<Settings> settingsRepository;
 
-		public GraphApplicationService(//INotificationLogClient notificationLogClient,
+		public GraphApplicationService(
 			IRepository<Neuron> neuronRepository,
 			IRepository<Terminal> terminalRepository,
 			IRepository<Settings> settingsRepository)
 		{
-			//this.notificationLogClient = notificationLogClient;
 			this.neuronRepository = neuronRepository;
 			this.terminalRepository = terminalRepository;
 			this.settingsRepository = settingsRepository;
-		}
-
-		public async Task BeginAsync()
-		{
-			await this.InitializeRepositoriesAsync();
-			await this.ClearRepositoriesAsync();
-
-			// TODO: subscribe logic will be done in the background service
-		}
-
-		public async Task ResumeAsync()
-		{
-			// ensure database is created
-			await this.InitializeRepositoriesAsync();
-
-			var savedSettings = await this.settingsRepository.Get(Guid.Empty);
-
-			if (savedSettings == null)
-			{
-				await this.ClearRepositoriesAsync();
-			}
-			else
-			{
-				// TODO: subscribe logic will be done in the background service
-			}
-		}
-
-		public async Task SuspendAsync()
-		{
-			//await this.notificationLogClient.Stop();
 		}
 
 		public async Task InitializeRepositoriesAsync()

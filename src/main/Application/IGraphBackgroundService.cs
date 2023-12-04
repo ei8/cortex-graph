@@ -1,15 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Threading.Tasks;
 
 namespace ei8.Cortex.Graph.Application
 {
 	public interface IGraphBackgroundService
 	{
-		void Regenerate();
+		Task RegenerateAsync();
 
-		void ResumeGeneration();
+		Task ResumeGenerationAsync();
 
-		void Suspend();
+		Task SuspendAsync();
 	}
 }
