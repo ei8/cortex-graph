@@ -23,7 +23,6 @@ builder.Services.AddScoped<INeuronRepository, NeuronRepository>();
 builder.Services.AddScoped<IRepository<Terminal>, TerminalRepository>();
 builder.Services.AddScoped<ITerminalRepository, TerminalRepository>();
 builder.Services.AddScoped<IRepository<Settings>, SettingsRepository>();
-builder.Services.AddScoped<IGraphApplicationService, GraphApplicationService>();
 builder.Services.AddScoped<NLog.Logger>((_) => LogManager.GetCurrentClassLogger());
 
 // Add swagger UI.
@@ -31,8 +30,8 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 // Add background services.
-builder.Services.AddSingleton<IGraphBackgroundService, GraphBackgroundService>();
-builder.Services.AddHostedService<GraphBackgroundService>(sp => (GraphBackgroundService)sp.GetRequiredService<IGraphBackgroundService>());
+builder.Services.AddSingleton<IGraphApplicationService, GraphApplicationService>();
+builder.Services.AddHostedService<GraphApplicationService>(sp => (GraphApplicationService)sp.GetRequiredService<IGraphApplicationService>());
 
 var app = builder.Build();
 
@@ -50,15 +49,11 @@ if (app.Environment.IsDevelopment())
 // Add endpoints here.
 app.MapPost("/cortex/graph/regenerate", async (
 	Logger logger,
-	IGraphApplicationService graphApplicationService,
-	IGraphBackgroundService graphBackgroundService) =>
+	IGraphApplicationService graphApplicationService) =>
 {
 	try
 	{
-		await graphApplicationService.InitializeRepositoriesAsync();
-		await graphApplicationService.ClearRepositoriesAsync();
-
-		await graphBackgroundService.RegenerateAsync();
+		await graphApplicationService.RegenerateAsync();
 
 		return Results.Ok();
 	}
@@ -73,14 +68,11 @@ app.MapPost("/cortex/graph/regenerate", async (
 
 app.MapPost("/cortex/graph/resumegeneration", async (
 	Logger logger,
-	IGraphApplicationService graphApplicationService,
-	IGraphBackgroundService graphBackgroundService) =>
+	IGraphApplicationService graphApplicationService) =>
 {
 	try
 	{
-		await graphApplicationService.InitializeRepositoriesAsync();
-
-		await graphBackgroundService.ResumeGenerationAsync();
+		await graphApplicationService.ResumeGenerationAsync();
 
 		return Results.Ok();
 	}
@@ -95,7 +87,7 @@ app.MapPost("/cortex/graph/resumegeneration", async (
 
 app.MapPost("/cortex/graph/suspendgeneration", async (
 	Logger logger,
-	IGraphBackgroundService graphBackgroundService) =>
+	IGraphApplicationService graphBackgroundService) =>
 {
 	try
 	{

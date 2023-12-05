@@ -12,22 +12,23 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Polly;
 
+// TODO: rename namespace to BackgroundService
 namespace ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Standard
 {
-	public class GraphBackgroundService : BackgroundService, IGraphBackgroundService
+	public class GraphApplicationService : BackgroundService, IGraphApplicationService
 	{
 		private const long StartPosition = 0;
 
 		private readonly IServiceProvider services;
-		private readonly ILogger<GraphBackgroundService> logger;
+		private readonly ILogger<GraphApplicationService> logger;
 
 		private readonly Policy exponentialRetryPolicy;
 
 		private bool isStarted;
 		private long lastPosition;
 
-		public GraphBackgroundService(IServiceProvider services,
-			ILogger<GraphBackgroundService> logger)
+		public GraphApplicationService(IServiceProvider services,
+			ILogger<GraphApplicationService> logger)
 		{
 			this.services = services;
 			this.logger = logger;
@@ -47,7 +48,18 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Standard
 
 		public async Task RegenerateAsync()
 		{
-			this.lastPosition = GraphBackgroundService.StartPosition;
+			using (var scope = this.services.CreateScope())
+			{
+				var neuronRepository = scope.ServiceProvider.GetRequiredService<INeuronRepository>();
+				var terminalRepository = scope.ServiceProvider.GetRequiredService<ITerminalRepository>();
+				var settingsRepository = scope.ServiceProvider.GetRequiredService<IRepository<Settings>>();
+
+				await this.InitializeRepositoriesAsync(neuronRepository, terminalRepository, settingsRepository);
+				await this.ClearRepositoriesAsync(neuronRepository, terminalRepository, settingsRepository);
+			}
+
+			// regenerate from beginning
+			this.lastPosition = GraphApplicationService.StartPosition;
 			this.isStarted = true;
 		}
 
@@ -77,14 +89,14 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Standard
 				// initial check
 				using (var scope = services.CreateScope())
 				{
-					var graphApplicationService = scope.ServiceProvider.GetRequiredService<IGraphApplicationService>();
 					var settingsService = scope.ServiceProvider.GetRequiredService<ISettingsService>();
 					var neuronRepository = scope.ServiceProvider.GetRequiredService<INeuronRepository>();
 					var terminalRepository = scope.ServiceProvider.GetRequiredService<ITerminalRepository>();
 					var settingsRepository = scope.ServiceProvider.GetRequiredService<IRepository<Settings>>();
 
-					await graphApplicationService.InitializeRepositoriesAsync();
-					await graphApplicationService.ClearRepositoriesAsync();
+					// TODO: Resume by default, run regenerate from beginning if last position in settings is 0
+					await this.InitializeRepositoriesAsync(neuronRepository, terminalRepository, settingsRepository);
+					await this.ClearRepositoriesAsync(neuronRepository, terminalRepository, settingsRepository);
 
 					await this.UpdateGraphAsync(
 						settingsService.EventSourcingOutBaseUrl,
@@ -92,11 +104,11 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Standard
 				}
 
 				// polling loop
-				await CheckEventSourcingForChanges(stoppingToken);
+				await PollForChangesAsync(stoppingToken);
 			});
 		}
 
-		private async Task CheckEventSourcingForChanges(CancellationToken stoppingToken)
+		private async Task PollForChangesAsync(CancellationToken stoppingToken)
 		{
 			while (!stoppingToken.IsCancellationRequested)
 			{
@@ -112,7 +124,7 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Standard
 						// only execute logic if the service is started
 						if (this.isStarted)
 						{
-							logger.LogInformation("{serviceName} is polling for changes...", nameof(GraphBackgroundService));
+							logger.LogInformation("{serviceName} is polling for changes...", nameof(GraphApplicationService));
 
 							await this.UpdateGraphAsync(
 								settingsService.EventSourcingOutBaseUrl,
@@ -122,7 +134,7 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Standard
 						}
 						else
 						{
-							logger.LogInformation("{serviceName} is stopped.", nameof(GraphBackgroundService));
+							logger.LogInformation("{serviceName} is stopped.", nameof(GraphApplicationService));
 						}
 					}
 					catch (Exception ex)
@@ -136,6 +148,11 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Standard
 			}
 		}
 
+		/// <summary>
+		/// Retrieve the last update position from the data store
+		/// </summary>
+		/// <param name="settingsRepository"></param>
+		/// <returns></returns>
 		private async Task SetLastPositionAsync(IRepository<Settings> settingsRepository)
 		{
 			var s = await settingsRepository.Get(Guid.Empty);
@@ -143,27 +160,43 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Standard
 			if (s != null)
 				long.TryParse(s.LastPosition, out this.lastPosition);
 			else
-				this.lastPosition = GraphBackgroundService.StartPosition;
+				this.lastPosition = GraphApplicationService.StartPosition;
 		}
 
+		/// <summary>
+		/// Perform updates to the graph by retrieving data from the event sourcing service
+		/// </summary>
+		/// <param name="notificationLogBaseUrl"></param>
+		/// <param name="neuronRepository"></param>
+		/// <param name="terminalRepository"></param>
+		/// <param name="settingsRepository"></param>
+		/// <returns></returns>
 		private async Task UpdateGraphAsync(string notificationLogBaseUrl, INeuronRepository neuronRepository, ITerminalRepository terminalRepository, IRepository<Settings> settingsRepository)
 		{
 			var eventSourcingUrl = notificationLogBaseUrl + "/";
 			var notificationClient = new HttpNotificationClient();
 			// get current log
 			var currentNotificationLog = await notificationClient.GetNotificationLog(eventSourcingUrl, string.Empty);
-			NotificationLog processingEventInfoLog;
+			NotificationLog processingEventInfoLog = null;
 
-			if (this.lastPosition == GraphBackgroundService.StartPosition)
+			if (this.lastPosition == GraphApplicationService.StartPosition)
 			{
 				// get first log from current
-				processingEventInfoLog = await notificationClient.GetNotificationLog(eventSourcingUrl, currentNotificationLog.FirstNotificationLogId);
+				await this.exponentialRetryPolicy.ExecuteAsync(async () =>
+				{
+					processingEventInfoLog = await notificationClient.GetNotificationLog(eventSourcingUrl, currentNotificationLog.FirstNotificationLogId);
+				});
 			}
 			else
 			{
 				processingEventInfoLog = currentNotificationLog;
 				while (this.lastPosition < processingEventInfoLog.DecodedNotificationLogId.Low)
-					processingEventInfoLog = await notificationClient.GetNotificationLog(eventSourcingUrl, processingEventInfoLog.PreviousNotificationLogId);
+				{
+					await this.exponentialRetryPolicy.ExecuteAsync(async () =>
+					{
+						processingEventInfoLog = await notificationClient.GetNotificationLog(eventSourcingUrl, processingEventInfoLog.PreviousNotificationLogId);
+					});
+				}
 			}
 
 			// while processing logid is not equal to newly retrieved currenteventinfolog
@@ -191,10 +224,43 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Standard
 					}
 
 				if (processingEventInfoLog.HasNextNotificationLog)
-					processingEventInfoLog = await notificationClient.GetNotificationLog(eventSourcingUrl, processingEventInfoLog.NextNotificationLogId);
+				{
+					await this.exponentialRetryPolicy.ExecuteAsync(async () =>
+					{
+						processingEventInfoLog = await notificationClient.GetNotificationLog(eventSourcingUrl, processingEventInfoLog.NextNotificationLogId);
+					});
+				}
 				else
 					break;
 			}
+		}
+
+		/// <summary>
+		/// Create the respective databases for the repositories, if they do not yet exist
+		/// </summary>
+		/// <param name="neuronRepository"></param>
+		/// <param name="terminalRepository"></param>
+		/// <param name="settingsRepository"></param>
+		/// <returns></returns>
+		private async Task InitializeRepositoriesAsync(INeuronRepository neuronRepository, ITerminalRepository terminalRepository, IRepository<Settings> settingsRepository)
+		{
+			await neuronRepository.Initialize();
+			await terminalRepository.Initialize();
+			await settingsRepository.Initialize();
+		}
+
+		/// <summary>
+		/// Drop then recreate the graphs for each repository
+		/// </summary>
+		/// <param name="neuronRepository"></param>
+		/// <param name="terminalRepository"></param>
+		/// <param name="settingsRepository"></param>
+		/// <returns></returns>
+		private async Task ClearRepositoriesAsync(INeuronRepository neuronRepository, ITerminalRepository terminalRepository, IRepository<Settings> settingsRepository)
+		{
+			await terminalRepository.Clear();
+			await neuronRepository.Clear();
+			await settingsRepository.Clear();
 		}
 	}
 }

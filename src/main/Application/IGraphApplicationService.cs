@@ -4,8 +4,10 @@ namespace ei8.Cortex.Graph.Application
 {
 	public interface IGraphApplicationService
 	{
-		Task InitializeRepositoriesAsync();
+		Task RegenerateAsync();
 
-		Task ClearRepositoriesAsync();
+		Task ResumeGenerationAsync();
+
+		Task SuspendAsync();
 	}
 }
