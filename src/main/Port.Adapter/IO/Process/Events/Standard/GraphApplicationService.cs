@@ -8,14 +8,12 @@ using ei8.EventSourcing.Client;
 using ei8.EventSourcing.Client.Out;
 using ei8.EventSourcing.Common;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Polly;
 
-// TODO: rename namespace to BackgroundService
-namespace ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Standard
+namespace ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.BackgroundService
 {
-	public class GraphApplicationService : BackgroundService, IGraphApplicationService
+	public class GraphApplicationService : Microsoft.Extensions.Hosting.BackgroundService, IGraphApplicationService
 	{
 		private const long StartPosition = 0;
 

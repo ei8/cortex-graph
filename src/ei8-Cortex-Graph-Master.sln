@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.29324.140
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.33627.172
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Domain.Model", "main\Domain.Model\Domain.Model.csproj", "{3C4BED6B-FA0D-4BC1-BEC3-9463F6B57254}"
 EndProject
@@ -25,9 +25,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Events", "main\Port.Adapter
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Events.Test", "test\Port.Adapter\IO\Process\Events\Events.Test.csproj", "{A42C3948-894F-46A9-A67F-82ABFE8CB6AC}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Standard", "Standard", "{0E085E73-5983-4772-82E3-C86E1AFF518D}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "BackgroundService", "BackgroundService", "{0E085E73-5983-4772-82E3-C86E1AFF518D}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Standard", "main\Port.Adapter\IO\Process\Events\Standard\Standard.csproj", "{CB2C83F0-29A3-4D54-934D-5C33758C850D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BackgroundService", "main\Port.Adapter\IO\Process\Events\Standard\BackgroundService.csproj", "{CB2C83F0-29A3-4D54-934D-5C33758C850D}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Standard.Test", "test\Port.Adapter\IO\Process\Events\Standard\Standard.Test.csproj", "{05943D92-C8CE-4F19-9888-9118D1A14ED0}"
 EndProject

@@ -3,7 +3,7 @@ using System.Net;
 using ei8.Cortex.Graph.Application;
 using ei8.Cortex.Graph.Domain.Model;
 using ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB;
-using ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Standard;
+using ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.BackgroundService;
 using ei8.Cortex.Graph.Port.Adapter.IO.Process.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics;

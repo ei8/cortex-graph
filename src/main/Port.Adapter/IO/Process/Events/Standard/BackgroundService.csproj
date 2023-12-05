@@ -2,8 +2,8 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <AssemblyName>ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Standard</AssemblyName>
-    <RootNamespace>ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.Standard</RootNamespace>
+    <AssemblyName>ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.BackgroundService</AssemblyName>
+    <RootNamespace>ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.BackgroundService</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
