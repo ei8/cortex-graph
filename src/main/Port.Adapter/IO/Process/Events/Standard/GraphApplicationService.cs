@@ -92,9 +92,9 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.BackgroundService
 					var terminalRepository = scope.ServiceProvider.GetRequiredService<ITerminalRepository>();
 					var settingsRepository = scope.ServiceProvider.GetRequiredService<IRepository<Settings>>();
 
-					// TODO: Resume by default, run regenerate from beginning if last position in settings is 0
+					// Resume from stored last position by default
 					await this.InitializeRepositoriesAsync(neuronRepository, terminalRepository, settingsRepository);
-					await this.ClearRepositoriesAsync(neuronRepository, terminalRepository, settingsRepository);
+					await this.SetLastPositionAsync(settingsRepository);
 
 					await this.UpdateGraphAsync(
 						settingsService.EventSourcingOutBaseUrl,
