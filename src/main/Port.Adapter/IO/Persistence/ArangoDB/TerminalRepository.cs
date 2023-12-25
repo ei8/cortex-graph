@@ -190,11 +190,6 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
             return queryStringBuilder.ToString();
         }
 
-        public async Task Initialize()
-        {
-            await Helper.CreateDatabase(this.settingsService);
-        }
-
         public async Task Remove(Terminal value, CancellationToken cancellationToken = default(CancellationToken))
         {
             await Helper.Remove(value, nameof(Terminal), this.settingsService.DatabaseName);

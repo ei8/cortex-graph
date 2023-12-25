@@ -10,7 +10,7 @@ namespace ei8.Cortex.Graph.Application
 {
     public class NeuronQueryService : INeuronQueryService
     {
-        private INeuronRepository neuronRepository;
+        private readonly INeuronRepository neuronRepository;
 
         public NeuronQueryService(INeuronRepository neuronRepository)
         {
@@ -19,7 +19,6 @@ namespace ei8.Cortex.Graph.Application
 
         public async Task<Common.QueryResult> GetNeurons(NeuronQuery neuronQuery, CancellationToken token = default(CancellationToken))
         {
-            await this.neuronRepository.Initialize();
             return (
                 await this.neuronRepository.GetAll(
                         neuronQuery,
@@ -30,7 +29,6 @@ namespace ei8.Cortex.Graph.Application
 
         public async Task<Common.QueryResult> GetNeurons(string centralId, NeuronQuery neuronQuery, CancellationToken token = default(CancellationToken))
         {
-            await this.neuronRepository.Initialize();
             return (
                 await this.neuronRepository.GetAll(
                         Guid.Parse(centralId),
@@ -49,7 +47,6 @@ namespace ei8.Cortex.Graph.Application
         {
             Common.QueryResult result = null;
 
-            await this.neuronRepository.Initialize();
             result = (
                 await this.neuronRepository.Get(
                     Guid.Parse(id),
@@ -66,7 +63,6 @@ namespace ei8.Cortex.Graph.Application
         {
             Common.QueryResult result = null;
 
-            await this.neuronRepository.Initialize();
             result = (
                 await this.neuronRepository.GetRelative(
                     Guid.Parse(id),

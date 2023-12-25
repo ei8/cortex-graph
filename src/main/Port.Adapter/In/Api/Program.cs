@@ -17,23 +17,26 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddHttpClient();
 
-builder.Services.AddScoped<ISettingsService, SettingsService>();
-builder.Services.AddScoped<IRepository<Neuron>, NeuronRepository>();
-builder.Services.AddScoped<INeuronRepository, NeuronRepository>();
-builder.Services.AddScoped<IRepository<Terminal>, TerminalRepository>();
-builder.Services.AddScoped<ITerminalRepository, TerminalRepository>();
-builder.Services.AddScoped<IRepository<Settings>, SettingsRepository>();
-builder.Services.AddScoped<NLog.Logger>((_) => LogManager.GetCurrentClassLogger());
+builder.Services.AddSingleton((_) => LogManager.GetCurrentClassLogger());
+builder.Services.AddSingleton<ISettingsService, SettingsService>();
+builder.Services.AddSingleton<IRepository<Neuron>, NeuronRepository>();
+builder.Services.AddSingleton<INeuronRepository, NeuronRepository>();
+builder.Services.AddSingleton<IRepository<Terminal>, TerminalRepository>();
+builder.Services.AddSingleton<ITerminalRepository, TerminalRepository>();
+builder.Services.AddSingleton<IRepository<Settings>, SettingsRepository>();
+builder.Services.AddSingleton<IPersistenceService, PersistenceService>();
 
 // Add swagger UI.
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Add background services.
+// Add background services
 builder.Services.AddSingleton<IGraphApplicationService, GraphApplicationService>();
-builder.Services.AddHostedService<GraphApplicationService>(sp => (GraphApplicationService)sp.GetRequiredService<IGraphApplicationService>());
+builder.Services.AddHostedService(sp => (GraphApplicationService)sp.GetRequiredService<IGraphApplicationService>());
 
 var app = builder.Build();
+
+await app.Services.GetRequiredService<IPersistenceService>().InitializeAsync();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

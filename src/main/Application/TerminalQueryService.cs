@@ -19,7 +19,6 @@ namespace ei8.Cortex.Graph.Application
         {
             Common.QueryResult result = null;
 
-            await this.terminalRepository.Initialize();
             result = (await this.terminalRepository.Get(Guid.Parse(id), neuronQuery, token))?.ToCommon();
 
             return result;
@@ -27,7 +26,6 @@ namespace ei8.Cortex.Graph.Application
 
         public async Task<Common.QueryResult> GetTerminals(NeuronQuery neuronQuery, CancellationToken token = default(CancellationToken))
         {
-            await this.terminalRepository.Initialize();
             return (
                 await this.terminalRepository.GetAll(
                         neuronQuery,

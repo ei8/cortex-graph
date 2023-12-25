@@ -19,29 +19,6 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
             return (await db.ListGraphsAsync()).Any(a => a.Id == "_graphs/" + Constants.GraphName);
         }
 
-        internal async static Task CreateDatabase(ISettingsService settingsService)
-        {
-            ArangoDatabase.ChangeSetting(
-                settingsService.DatabaseName,
-                s =>
-                {
-                    s.Database = settingsService.DatabaseName;
-                    s.Url = settingsService.DbUrl;
-                    s.Credential = new System.Net.NetworkCredential(settingsService.DbUsername, settingsService.DbPassword);
-                    s.SystemDatabaseCredential = s.Credential;
-                    // this ensures that dates are not parsed during jsonserialization
-                    // src/ArangoDB.Client/Serialization/DocumentSerializer.cs - DeserializeSingleResult does not use created serializer
-                    // src/ArangoDB.Client/Http/HttpCommand.cs - (line 141) setting EnabledChangeTracking to false ensures that Deserialize is called instead of DeserializeSingleResult
-                    s.DisableChangeTracking = true;
-                }
-                );
-            using (var db = ArangoDatabase.CreateWithSetting(settingsService.DatabaseName))
-            {
-                if (!(await db.ListDatabasesAsync()).Any(s => s == settingsService.DatabaseName))
-                    await db.CreateDatabaseAsync(settingsService.DatabaseName);
-            }
-        }
-
         internal async static Task Remove(object value, string collectionName, string databaseName)
         {
             using (var db = ArangoDatabase.CreateWithSetting(databaseName))

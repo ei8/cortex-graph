@@ -64,10 +64,5 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
         {
             throw new NotImplementedException();
         }
-
-        public async Task Initialize()
-        {
-            await Helper.CreateDatabase(this.settingsService);
-        }
     }
 }

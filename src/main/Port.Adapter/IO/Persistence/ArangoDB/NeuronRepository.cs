@@ -195,11 +195,6 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
             await Helper.Save(value, nameof(Neuron), this.settingsService.DatabaseName);
         }
 
-        public async Task Initialize()
-        {
-            await Helper.CreateDatabase(this.settingsService);
-        }
-
         public async Task<Domain.Model.QueryResult> GetAll(NeuronQuery neuronQuery, CancellationToken token = default(CancellationToken))
         {
             return await this.GetAllCore(null, neuronQuery, token);

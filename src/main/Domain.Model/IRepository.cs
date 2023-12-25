@@ -13,7 +13,5 @@ namespace ei8.Cortex.Graph.Domain.Model
         Task Remove(T value, CancellationToken cancellationToken = default(CancellationToken));
 
         Task Clear();
-
-        Task Initialize();
     }
 }

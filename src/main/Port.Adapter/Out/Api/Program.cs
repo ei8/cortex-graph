@@ -11,15 +11,18 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
+using NLog;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
+builder.Services.AddScoped((_) => LogManager.GetCurrentClassLogger());
 builder.Services.AddScoped<ISettingsService, SettingsService>();
 builder.Services.AddScoped<INeuronRepository, NeuronRepository>();
 builder.Services.AddScoped<INeuronQueryService, NeuronQueryService>();
 builder.Services.AddScoped<ITerminalRepository, TerminalRepository>();
 builder.Services.AddScoped<ITerminalQueryService, TerminalQueryService>();
+builder.Services.AddScoped<IPersistenceService, PersistenceService>();
 
 builder.Services.AddHttpClient();
 
@@ -28,6 +31,12 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateAsyncScope())
+{
+    var persistenceService = scope.ServiceProvider.GetRequiredService<IPersistenceService>();
+    await persistenceService.InitializeAsync();
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
