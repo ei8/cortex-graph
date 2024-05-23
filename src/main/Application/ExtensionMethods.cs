@@ -1,9 +1,6 @@
 ﻿using ei8.Cortex.Graph.Common;
-using ei8.Cortex.Graph.Domain.Model;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace ei8.Cortex.Graph.Application
 {
@@ -92,6 +89,16 @@ namespace ei8.Cortex.Graph.Application
             return result;
         }
 
+        public static Common.TraversalResult ToCommon(this Domain.Model.Traversal value)
+        {
+            var result = new TraversalResult();
+
+            result.Neurons = value.Neurons.Select(n => n.ToCommon());
+            result.Terminals = value.Terminals.Select(t => t.ToCommon());
+            
+            return result;
+        }
+
         public static Common.NeuronResult ToCommon(this Domain.Model.NeuronResult value, string centralId)
         {
             Common.NeuronResult result = null;
@@ -109,6 +116,7 @@ namespace ei8.Cortex.Graph.Application
                             result.LastModification.Author.Tag = value.NeuronLastModificationAuthorTag;
                             result.UnifiedLastModification.Author.Tag = value.NeuronUnifiedLastModificationAuthorTag;
                             result.Region.Tag = value.NeuronRegionTag;
+                            result.Traversals = value.Traversals?.Select(t => t.ToCommon());
                         }
 
                         if (value.Terminal?.Id != null)

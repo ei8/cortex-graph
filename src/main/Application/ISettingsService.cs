@@ -25,5 +25,9 @@ namespace ei8.Cortex.Graph.Application
 		int DefaultPageSize { get; }
 
 		int DefaultPage { get; }
-	}
+
+		int DefaultDepth { get; }
+
+        DirectionValues DefaultDirectionValues { get; }
+    }
 }

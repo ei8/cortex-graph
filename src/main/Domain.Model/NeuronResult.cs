@@ -24,6 +24,8 @@ namespace ei8.Cortex.Graph.Domain.Model
 
         public string TerminalCreationAuthorTag { get; set; }
 
-        public string TerminalLastModificationAuthorTag { get; set; }        
+        public string TerminalLastModificationAuthorTag { get; set; }
+
+        public IEnumerable<Traversal> Traversals { get; set; }
     }
 }

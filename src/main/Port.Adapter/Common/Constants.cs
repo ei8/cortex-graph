@@ -13,5 +13,7 @@
 		public const string DefaultTerminalActiveValues = @"DEFAULT_TERMINAL_ACTIVE_VALUES";
 		public const string DefaultPageSize = @"DEFAULT_PAGE_SIZE";
 		public const string DefaultPage = @"DEFAULT_PAGE";
-	}
+        public const string DefaultDepth = @"DEFAULT_DEPTH";
+        public const string DefaultDirectionValues = @"DEFAULT_DIRECTION_VALUES";
+    }
 }

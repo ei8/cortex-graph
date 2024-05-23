@@ -28,5 +28,9 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Process.Services
 		public int DefaultPageSize => int.Parse(Environment.GetEnvironmentVariable(EnvironmentVariableKeys.DefaultPageSize));
 
 		public int DefaultPage => int.Parse(Environment.GetEnvironmentVariable(EnvironmentVariableKeys.DefaultPage));
-	}
+
+        public int DefaultDepth => int.Parse(Environment.GetEnvironmentVariable(EnvironmentVariableKeys.DefaultDepth));
+
+        public DirectionValues DefaultDirectionValues => (DirectionValues)Enum.Parse(typeof(DirectionValues), Environment.GetEnvironmentVariable(EnvironmentVariableKeys.DefaultDirectionValues), true);
+    }
 }

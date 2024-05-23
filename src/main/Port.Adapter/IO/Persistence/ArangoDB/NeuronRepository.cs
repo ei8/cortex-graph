@@ -64,6 +64,10 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
                 neuronQuery.PageSize = settingsService.DefaultPageSize;
             if (!neuronQuery.Page.HasValue)
                 neuronQuery.Page = settingsService.DefaultPage;
+            if (!neuronQuery.Depth.HasValue)
+                neuronQuery.Depth = settingsService.DefaultDepth;
+            if (!neuronQuery.DirectionValues.HasValue)
+                neuronQuery.DirectionValues = settingsService.DefaultDirectionValues;
         }
 
         public async Task<Domain.Model.QueryResult> Get(Guid guid, NeuronQuery neuronQuery, CancellationToken cancellationToken = default(CancellationToken))
@@ -87,6 +91,7 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
 
                 if (!centralGuid.HasValue)
                 {
+                    // TODO: Remove or update until line 134 as this is obsolete?
                     var n = await db.DocumentAsync<Neuron>(guid.ToString());
                     if (
                             n != null && (
@@ -285,6 +290,24 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
                             return regionNeuron.Tag
                         )";
             var neuronAuthorRegionReturn = ", NeuronCreationAuthorTag: FIRST(neuronCreationAuthorTag), NeuronLastModificationAuthorTag: FIRST(neuronLastModificationAuthorTag), NeuronUnifiedLastModificationAuthorTag: FIRST(neuronUnifiedLastModificationAuthorTag), NeuronRegionTag: FIRST(neuronRegionTag)";
+            
+            string traversals = string.Empty,
+                traversalsReturn = string.Empty;
+
+            if (neuronQuery.Depth.HasValue && neuronQuery.Depth.Value > 0)
+            {
+                traversals = $@"
+                        LET traversals = (
+                            FOR v, e, p 
+                            IN 1..@{nameof(NeuronQuery.Depth)}
+                            {neuronQuery.DirectionValues.ToString().ToUpper()} n 
+                            GRAPH ""{Constants.GraphName}""
+                            RETURN {{Neurons: p.vertices[*], Terminals: p.edges[*] }}
+                        )";
+                traversalsReturn = ", Traversals: traversals";
+                queryParameters.Add(new QueryParameter() { Name =  nameof(NeuronQuery.Depth), Value = neuronQuery.Depth.Value });
+            }
+
             if (!centralGuid.HasValue)
             {
                 // Neuron Active
@@ -294,7 +317,8 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
                     FOR n IN Neuron
                         {queryFiltersBuilder}
                         {neuronAuthorRegion}
-                            RETURN {{ Neuron: n, Terminal: {{}}{neuronAuthorRegionReturn} }}");
+                        {traversals}
+                            RETURN {{ Neuron: n, Terminal: {{}}{neuronAuthorRegionReturn}{traversalsReturn} }}");
             }
             else
             {
@@ -366,9 +390,10 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
                             return terminalAuthorNeuron.Tag
                         )
                         {neuronAuthorRegion}
+                        {traversals}
                         FILTER {filterPost} {(!string.IsNullOrEmpty(filterPost) && !string.IsNullOrEmpty(filterPre) ? "||" : string.Empty)} {filterPre}
                         {queryFiltersBuilder}
-                            RETURN {{ Neuron: n, Terminal: t, TerminalCreationAuthorTag: FIRST(terminalCreationAuthorTag), TerminalLastModificationAuthorTag: FIRST(terminalLastModificationAuthorTag){neuronAuthorRegionReturn}}}");
+                            RETURN {{ Neuron: n, Terminal: t, TerminalCreationAuthorTag: FIRST(terminalCreationAuthorTag), TerminalLastModificationAuthorTag: FIRST(terminalLastModificationAuthorTag){neuronAuthorRegionReturn}{traversalsReturn}}}");
 
                 queryParameters.Add(new QueryParameter()
                 {
