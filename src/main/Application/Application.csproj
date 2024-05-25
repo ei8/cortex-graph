@@ -7,7 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="ei8.Cortex.Graph.Common" Version="0.3.3" />
+    <PackageReference Include="ei8.Cortex.Graph.Common" Version="0.3.9" />
   </ItemGroup>
 
   <ItemGroup>

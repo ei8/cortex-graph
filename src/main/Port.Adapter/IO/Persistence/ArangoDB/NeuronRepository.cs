@@ -12,6 +12,7 @@ using ei8.Cortex.Graph.Common;
 using ei8.Cortex.Graph.Domain.Model;
 using Neuron = ei8.Cortex.Graph.Domain.Model.Neuron;
 using Terminal = ei8.Cortex.Graph.Domain.Model.Terminal;
+using System.Runtime.CompilerServices;
 
 namespace ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
 {
@@ -296,12 +297,32 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
 
             if (neuronQuery.Depth.HasValue && neuronQuery.Depth.Value > 0)
             {
+                var traversalFilters = new List<string>();
+
+                // TODO: Use ExtractFilters
+                if (neuronQuery.TraversalPostsynapticNot != null)
+                    foreach (var f in neuronQuery.TraversalPostsynapticNot)
+                        traversalFilters.Add($"e._to != CONCAT(\"Neuron/\", '{f}')");
+                if (neuronQuery.TraversalMinimumDepthPostsynaptic != null)
+                    foreach (var f in neuronQuery.TraversalMinimumDepthPostsynaptic)
+                        traversalFilters.Add($@"(LENGTH(p.edges) < {f.Depth} OR e._to IN [{string.Join(
+                                ", ",
+                                f.Ids.Select(id => $"CONCAT(\"Neuron/\", '{id}')")
+                            )}])");
+                if (neuronQuery.TraversalMinimumDepthPostsynapticNot != null)
+                    foreach (var f in neuronQuery.TraversalMinimumDepthPostsynapticNot)
+                        traversalFilters.Add($@"(LENGTH(p.edges) < {f.Depth} OR e._to NOT IN [{
+                            string.Join(
+                                ", ", 
+                                f.Ids.Select(id => $"CONCAT(\"Neuron/\", '{id}')")
+                            )}])");
                 traversals = $@"
                         LET traversals = (
                             FOR v, e, p 
                             IN 1..@{nameof(NeuronQuery.Depth)}
                             {neuronQuery.DirectionValues.ToString().ToUpper()} n 
                             GRAPH ""{Constants.GraphName}""
+                            {(traversalFilters.Count() > 0 ? $"FILTER {string.Join(" AND ", traversalFilters)}" : string.Empty)}
                             RETURN {{Neurons: p.vertices[*], Terminals: p.edges[*] }}
                         )";
                 traversalsReturn = ", Traversals: traversals";

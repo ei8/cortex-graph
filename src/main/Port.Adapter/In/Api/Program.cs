@@ -1,6 +1,4 @@
-﻿using System;
-using System.Net;
-using ei8.Cortex.Graph.Application;
+﻿using ei8.Cortex.Graph.Application;
 using ei8.Cortex.Graph.Domain.Model;
 using ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB;
 using ei8.Cortex.Graph.Port.Adapter.IO.Process.Events.BackgroundService;
@@ -11,6 +9,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using NLog;
+using System;
+using System.Net;
 
 var builder = WebApplication.CreateBuilder(args);
 
