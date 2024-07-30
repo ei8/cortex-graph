@@ -6,6 +6,7 @@ using ei8.Cortex.Graph.Domain.Model;
 using neurUL.Common.Domain.Model;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -232,9 +233,16 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
             var queryFiltersBuilder = new StringBuilder();
             var queryStringBuilder = new StringBuilder();
 
-            Func<string, string> valueBuilder = s => $"%{s}%";
-            Func<string, List<string>, string, string> selector =
-                (f, ls, s) =>
+            Func<string, string> valueBuilder = s => s;
+            Func<string, List<string>, string, string> selector = (f, ls, s) => $"n.Tag == @{f + (ls.IndexOf(s) + 1)}";
+
+            // Tag
+            NeuronRepository.ExtractFilters(neuronQuery.Tag, nameof(NeuronQuery.Tag), valueBuilder, selector, queryParameters, queryFiltersBuilder, "||");
+            // TagNot
+            NeuronRepository.ExtractFilters(neuronQuery.TagNot, nameof(NeuronQuery.TagNot), valueBuilder, selector, queryParameters, queryFiltersBuilder, "||", "NOT");
+
+            valueBuilder = s => $"%{s}%";
+            selector = (f, ls, s) =>
                 neuronQuery.TagContainsIgnoreWhitespace.HasValue && neuronQuery.TagContainsIgnoreWhitespace.Value ?
                     @$"LIKE(SUBSTITUTE(n.Tag, [""\\n"", "" ""]), SUBSTITUTE(@{f + (ls.IndexOf(s) + 1)}, [""\\n"", "" ""]), true)" :
                     $"Upper(n.Tag) LIKE Upper(@{f + (ls.IndexOf(s) + 1)})";
@@ -323,17 +331,21 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
                 // Neuron Active
                 NeuronRepository.AddActiveFilter("n", neuronQuery.NeuronActiveValues.Value, queryFiltersBuilder);
 
+                NeuronRepository.AddTraversalsFilter(traversals, queryFiltersBuilder);
+
                 queryStringBuilder.Append($@"
                     FOR n IN Neuron
-                        {queryFiltersBuilder}
                         {neuronAuthorRegion}
                         {traversals}
+                        {queryFiltersBuilder}
                             RETURN {{ Neuron: n, Terminal: {{}}{neuronAuthorRegionReturn}{traversalsReturn} }}");
             }
             else
             {
                 // Terminal Active
                 NeuronRepository.AddActiveFilter("t", neuronQuery.TerminalActiveValues.Value, queryFiltersBuilder);
+
+                NeuronRepository.AddTraversalsFilter(traversals, queryFiltersBuilder);
 
                 string letPre = string.Empty,
                     inPre = string.Empty,
@@ -514,6 +526,19 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
                 ));
                 var filters = field.Select(f => selector(fieldName, idEqualsList, f));
                 queryFiltersBuilder.Append($"{logicWrapper}({string.Join($" {filterJoiner} ", filters)})");
+            }
+        }
+
+        private static void AddTraversalsFilter(string traversals, StringBuilder queryFiltersBuilder)
+        {
+            if (!string.IsNullOrWhiteSpace(traversals))
+            {
+                if (queryFiltersBuilder.Length == 0)
+                    queryFiltersBuilder.Append(NeuronRepository.InitialQueryFilters);
+                if (queryFiltersBuilder.Length > NeuronRepository.InitialQueryFilters.Length)
+                    queryFiltersBuilder.Append(" && ");
+
+                queryFiltersBuilder.Append("LENGTH(traversals) > 0");
             }
         }
 
