@@ -1,10 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using ei8.Cortex.Graph.Common;
+using ei8.Cortex.Graph.Domain.Model;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
-using ei8.Cortex.Graph.Common;
-using ei8.Cortex.Graph.Domain.Model;
 
 namespace ei8.Cortex.Graph.Application
 {
@@ -37,7 +35,6 @@ namespace ei8.Cortex.Graph.Application
                     )
                 ).ToCommon(centralId);
         }
-
         private static Guid? GetNullableStringGuid(string value)
         {
             return (value == null ? (Guid?) null : Guid.Parse(value));
