@@ -316,7 +316,7 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
                 traversals = $@"
                         LET traversals = (
                             FOR v, e, p 
-                            IN 1..@{nameof(NeuronQuery.Depth)}
+                            IN 0..@{nameof(NeuronQuery.Depth)}
                             {neuronQuery.DirectionValues.ToString().ToUpper()} n 
                             GRAPH ""{Constants.GraphName}""
                             {(traversalFilters.Count() > 0 ? $"FILTER {string.Join(" OR ", traversalFilters)}" : string.Empty)}
