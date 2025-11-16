@@ -160,8 +160,12 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
         {
             Domain.Model.QueryResult result = null;
 
-            using (var db = ArangoDatabase.CreateWithSetting(settingName))
+            var queryString = neuronQuery.ToString();
+
+            try
             {
+                using IArangoDatabase db = ArangoDatabase.CreateWithSetting(settingName);
+                
                 var queryResult = db.CreateStatement<Domain.Model.NeuronResult>(
                     NeuronRepository.CreateQuery(centralGuid, relativeGuid, neuronQuery, out List<QueryParameter> queryParameters),
                     queryParameters,
@@ -186,6 +190,10 @@ namespace ei8.Cortex.Graph.Port.Adapter.IO.Persistence.ArangoDB
                     Count = fullCount,
                     Neurons = neurons
                 };
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"An error was encountered while processing the query: '{queryString}'", ex);
             }
 
             return result;
